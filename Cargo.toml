@@ -1,0 +1,10 @@
+[package]
+name = "pr5_alt"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ahp_classic = { version = "0.1.0", path = "ahp_classic" }
+
+[workspace]
+members = ["ahp_classic", "ahp_shortII"]
