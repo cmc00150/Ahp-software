@@ -14,9 +14,9 @@ mod tests {
 
     fn matriz_ejemplo() -> PairMatrix {
         let mut q = QuizPairMatrix::new(vec!["c1".to_string(), "c2".to_string(), "c3".to_string()]);
-        q.set_item(0, AhpScore::LeftDominates(SaatyScore::VeryStronglyBetter));
-        q.set_item(1, AhpScore::LeftDominates(SaatyScore::SlightlyBetterPlus));
-        q.set_item(2, AhpScore::RightDominates(SaatyScore::SlightlyBetter));
+        q.set_score(0, AhpScore::LeftDominates(SaatyScore::StronglyBetterPlus));
+        q.set_score(1, AhpScore::LeftDominates(SaatyScore::SlightlyBetter));
+        q.set_score(2, AhpScore::RightDominates(SaatyScore::StronglyBetter));
         PairMatrix::from_quiz(q)
     }
 

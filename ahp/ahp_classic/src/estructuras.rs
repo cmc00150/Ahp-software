@@ -7,10 +7,10 @@ pub struct QuizPairMatrix {
 }
 
 #[derive(Debug, Clone)]
-pub struct QuizItem {
-    pub label1: Rc<str>,
-    pub label2: Rc<str>,
-    pub score: AhpScore,
+struct QuizItem {
+    label1: Rc<str>,
+    label2: Rc<str>,
+    score: AhpScore,
 }
 
 impl QuizPairMatrix {
@@ -32,11 +32,11 @@ impl QuizPairMatrix {
         Self { labels, data }
     }
 
-    pub fn items(&self) -> &[QuizItem] {
+    pub fn scores(&self) -> &[QuizItem] {
         &self.data
     }
 
-    pub fn set_item(&mut self, idx: usize, score: AhpScore) -> Option<()> {
+    pub fn set_score(&mut self, idx: usize, score: AhpScore) -> Option<()> {
         self.data.get_mut(idx).and_then(|item| {
             item.score = score;
             Some(())
@@ -53,14 +53,14 @@ pub enum AhpScore {
 
 #[derive(Debug, Clone)]
 pub enum SaatyScore {
-    SlightlyBetter = 2,
-    SlightlyBetterPlus = 3,
-    StronglyBetter = 4,
-    StronglyBetterPlus = 5,
-    VeryStronglyBetter = 6,
-    VeryStronglyBetterPlus = 7,
-    ExtremelyBetter = 8,
-    ExtremelyBetterPlus = 9,
+    EqualPlus = 2,
+    SlightlyBetter = 3,
+    SlightlyBetterPlus = 4,
+    StronglyBetter = 5,
+    StronglyBetterPlus = 6,
+    VeryStronglyBetter = 7,
+    VeryStronglyBetterPlus = 8,
+    ExtremelyBetter = 9,
 }
 
 pub struct PairMatrix {
