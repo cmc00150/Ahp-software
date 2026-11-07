@@ -70,8 +70,8 @@ mod tests {
         let m = matriz_ejemplo();
         let v = WeightMethod::EigenValues.calc_weights(&m);
         let (ci, _cr) = WeightMethod::EigenValues
-            .calc_CICR(&v, &m)
-            .expect("calc_CICR devolvió None");
+            .calc_cicr(&v, &m)
+            .expect("calc_cicr devolvió None");
         assert_eq!(redondear(ci, 3), 0.000, "CI");
     }
 
@@ -80,8 +80,8 @@ mod tests {
         let m = matriz_ejemplo();
         let v = WeightMethod::EigenValues.calc_weights(&m);
         let (_ci, cr) = WeightMethod::EigenValues
-            .calc_CICR(&v, &m)
-            .expect("calc_CICR devolvió None");
+            .calc_cicr(&v, &m)
+            .expect("calc_cicr devolvió None");
         assert_eq!(redondear(cr, 3), 0.000, "CR");
     }
 }

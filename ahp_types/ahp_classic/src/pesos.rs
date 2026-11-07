@@ -86,7 +86,7 @@ impl WeightMethod {
         }
     }
 
-    pub fn calc_CICR(&self, weights: &[f64], a: &PairMatrix) -> Option<(f64, f64)> {
+    pub fn calc_cicr(&self, weights: &[f64], a: &PairMatrix) -> Option<(f64, f64)> {
         match self {
             WeightMethod::EigenValues => {
                 let n = weights.len();

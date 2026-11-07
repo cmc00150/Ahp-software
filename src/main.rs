@@ -25,7 +25,7 @@ fn main() {
         WeightMethod::EigenValues.calc_lambda_max(&v, &m)
     );
     let (ci, cr) = WeightMethod::EigenValues
-        .calc_CICR(&v, &m)
+        .calc_cicr(&v, &m)
         .map_or_default(|_| (-1.0, -1.0));
     println!("CI: {} y CR: {}", ci, cr)
 }
