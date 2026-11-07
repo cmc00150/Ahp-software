@@ -2,20 +2,20 @@ use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct QuizPairMatrix {
-    labels: Vec<Rc<str>>,
+    labels: Vec<Rc<String>>,
     data: Vec<QuizItem>,
 }
 
 #[derive(Debug, Clone)]
-struct QuizItem {
-    label1: Rc<str>,
-    label2: Rc<str>,
-    score: AhpScore,
+pub struct QuizItem {
+    pub label1: Rc<String>,
+    pub label2: Rc<String>,
+    pub score: AhpScore,
 }
 
 impl QuizPairMatrix {
-    pub fn new(raw_labels: Vec<String>) -> Self {
-        let labels: Vec<Rc<str>> = raw_labels.into_iter().map(Rc::from).collect();
+    pub fn new(raw_labels: &[impl ToString]) -> Self {
+        let labels: Vec<Rc<String>> = raw_labels.iter().map(|s| Rc::new(s.to_string())).collect();
         let mut data: Vec<QuizItem> = Vec::new();
         let n = labels.len();
 

@@ -13,7 +13,8 @@ mod tests {
     }
 
     fn matriz_ejemplo() -> PairMatrix {
-        let mut q = QuizPairMatrix::new(vec!["c1".to_string(), "c2".to_string(), "c3".to_string()]);
+        let criteria = vec!["c1", "c2", "c3"];
+        let mut q = QuizPairMatrix::new(&criteria);
         q.set_score(0, AhpScore::LeftDominates(SaatyScore::StronglyBetterPlus));
         q.set_score(1, AhpScore::LeftDominates(SaatyScore::SlightlyBetter));
         q.set_score(2, AhpScore::RightDominates(SaatyScore::StronglyBetter));
