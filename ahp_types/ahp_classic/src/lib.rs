@@ -4,7 +4,7 @@ pub mod pesos;
 #[cfg(test)]
 #[cfg(test)]
 mod tests {
-    use crate::estructuras::{PairMatrix, QuizPairMatrix};
+    use crate::estructuras::{AhpScore, PairMatrix, QuizPairMatrix, SaatyScore};
     use crate::pesos::WeightMethod;
 
     fn redondear(x: f64, decimales: u32) -> f64 {
@@ -14,9 +14,9 @@ mod tests {
 
     fn matriz_ejemplo() -> PairMatrix {
         let mut q = QuizPairMatrix::new(vec!["c1".to_string(), "c2".to_string(), "c3".to_string()]);
-        q.set_item(0, 6.0);
-        q.set_item(1, 3.0);
-        q.set_item(2, 1.0 / 2.0);
+        q.set_item(0, AhpScore::LeftDominates(SaatyScore::VeryStronglyBetter));
+        q.set_item(1, AhpScore::LeftDominates(SaatyScore::SlightlyBetterPlus));
+        q.set_item(2, AhpScore::RightDominates(SaatyScore::SlightlyBetter));
         PairMatrix::from_quiz(q)
     }
 

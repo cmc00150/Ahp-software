@@ -7,10 +7,10 @@ pub struct QuizPairMatrix {
 }
 
 #[derive(Debug, Clone)]
-struct QuizItem {
+pub struct QuizItem {
     pub label1: Rc<str>,
     pub label2: Rc<str>,
-    pub value: f64,
+    pub score: AhpScore,
 }
 
 impl QuizPairMatrix {
@@ -24,7 +24,7 @@ impl QuizPairMatrix {
                 data.push(QuizItem {
                     label1: Rc::clone(&labels[i]),
                     label2: Rc::clone(&labels[j]),
-                    value: 1.0,
+                    score: AhpScore::Equal,
                 });
             }
         }
@@ -36,12 +36,31 @@ impl QuizPairMatrix {
         &self.data
     }
 
-    pub fn set_item(&mut self, idx: usize, value: f64) -> Option<()> {
-        self.data.get_mut(idx).and_then(|v| {
-            v.value = value;
+    pub fn set_item(&mut self, idx: usize, score: AhpScore) -> Option<()> {
+        self.data.get_mut(idx).and_then(|item| {
+            item.score = score;
             Some(())
         })
     }
+}
+
+#[derive(Debug, Clone)]
+pub enum AhpScore {
+    LeftDominates(SaatyScore),
+    Equal,
+    RightDominates(SaatyScore),
+}
+
+#[derive(Debug, Clone)]
+pub enum SaatyScore {
+    SlightlyBetter = 2,
+    SlightlyBetterPlus = 3,
+    StronglyBetter = 4,
+    StronglyBetterPlus = 5,
+    VeryStronglyBetter = 6,
+    VeryStronglyBetterPlus = 7,
+    ExtremelyBetter = 8,
+    ExtremelyBetterPlus = 9,
 }
 
 pub struct PairMatrix {
@@ -53,7 +72,15 @@ pub struct PairMatrix {
 impl PairMatrix {
     pub fn from_quiz(quiz: QuizPairMatrix) -> Self {
         let size = quiz.labels.len();
-        let data = quiz.data.into_iter().map(|item| item.value).collect();
+        let data = quiz
+            .data
+            .into_iter()
+            .map(|item| match item.score {
+                AhpScore::LeftDominates(s) => s as u8 as f64,
+                AhpScore::Equal => 1.0,
+                AhpScore::RightDominates(s) => 1.0 / s as u8 as f64,
+            })
+            .collect();
         let labels = quiz.labels.into_iter().map(|rc| rc.to_string()).collect();
 
         Self { labels, size, data }
