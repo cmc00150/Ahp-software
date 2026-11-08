@@ -1,4 +1,4 @@
-use crate::estructuras::pair_matrix::PairMatrix;
+use crate::share::pair_matrix::PairMatrix;
 
 const LIM_IT: u16 = 10_000;
 const TOLERANCE: f64 = 1e-12;

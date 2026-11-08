@@ -1,5 +1,5 @@
 [package]
-name = "ahp_classic"
+name = "ahp"
 version = "0.1.0"
 edition = "2024"
 

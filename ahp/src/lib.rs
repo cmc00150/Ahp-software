@@ -1,13 +1,14 @@
-pub mod estructuras;
-pub mod pesos;
+pub mod ahp_classic;
+pub mod ahp_shortII;
+pub mod share;
 
 #[cfg(test)]
 mod tests {
-    use crate::estructuras::{
+    use crate::share::{
         pair_matrix::PairMatrix,
+        pesos::WeightMethod,
         quiz::{AhpScore, QuizPairMatrix, SaatyScore},
     };
-    use crate::pesos::WeightMethod;
 
     fn redondear(x: f64, decimales: u32) -> f64 {
         let factor = 10f64.powi(decimales as i32);

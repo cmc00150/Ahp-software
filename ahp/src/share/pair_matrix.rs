@@ -1,4 +1,4 @@
-use crate::estructuras::quiz::{AhpScore, QuizPairMatrix};
+use crate::share::quiz::{AhpScore, QuizPairMatrix};
 
 #[derive(Debug, Clone)]
 pub struct PairMatrix {

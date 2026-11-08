@@ -1,4 +1,4 @@
-use crate::estructuras::ahp::Value;
+use crate::share::share::Value;
 
 #[derive(Debug, Clone)]
 pub struct QuizPairMatrix(pub(crate) Vec<QuizItem>);

@@ -1,7 +1,0 @@
-[package]
-name = "ahp_shortII"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-ahp_classic = { version = "0.1.0", path = "ahp_types/ahp_classic" }

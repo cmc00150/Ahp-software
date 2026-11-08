@@ -3,16 +3,12 @@
 version = 4
 
 [[package]]
-name = "ahp_classic"
-version = "0.1.0"
-
-[[package]]
-name = "ahp_shortII"
+name = "ahp"
 version = "0.1.0"
 
 [[package]]
 name = "pr5_alt"
 version = "0.1.0"
 dependencies = [
- "ahp_classic",
+ "ahp",
 ]

@@ -1,9 +1,9 @@
-use crate::{
-    estructuras::{pair_matrix::PairMatrix, quiz::QuizPairMatrix},
+use crate::share::{
+    pair_matrix::PairMatrix,
     pesos::{WeightMethod, WeightsReport},
+    quiz::QuizPairMatrix,
+    share::Value,
 };
-
-pub type Value = (f64, String); // Valor y unidades
 
 pub struct Ahp {
     criteria_labels: Vec<String>,
