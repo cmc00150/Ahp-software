@@ -2,13 +2,13 @@ use crate::share::{
     pair_matrix::PairMatrix,
     pesos::{WeightMethod, WeightsReport},
     quiz::QuizPairMatrix,
-    share::Value,
+    share::Table,
 };
 
 pub struct Ahp {
     criteria_labels: Vec<String>,
     alternatives_labels: Vec<String>,
-    values: Vec<Vec<Value>>,
+    values: Table,
 
     criteria_matrix: Option<PairMatrix>,
     alt_matrices: Option<Vec<PairMatrix>>,
@@ -18,9 +18,9 @@ impl Ahp {
     pub fn new(
         c_labels: Vec<impl ToString>,
         alt_labels: Vec<impl ToString>,
-        values: Vec<Vec<Value>>,
+        values: Table,
     ) -> Result<Self, &'static str> {
-        if alt_labels.len() != values.len() || c_labels.len() != values[0].len() {
+        if alt_labels.len() != values.len() || c_labels.len() != values[0].1.len() {
             Err(
                 "[Ahp::new] La cardinalidad de la matriz de valores no coincide con los vectores de nombes, asegurate de que los criterios son las filas y las alternativas las columnas.",
             )

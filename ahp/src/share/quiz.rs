@@ -1,7 +1,7 @@
-use crate::share::share::Value;
+use crate::share::share::{RowWithUnits, Value};
 
 #[derive(Debug, Clone)]
-pub struct QuizPairMatrix(pub(crate) Vec<QuizItem>);
+pub struct QuizPairMatrix(Vec<QuizItem>);
 
 #[derive(Debug, Clone)]
 pub struct QuizItem {
@@ -13,22 +13,21 @@ pub struct QuizItem {
 }
 
 impl QuizPairMatrix {
-    pub fn new(labels: &[String], values: Option<&[Value]>) -> Self {
+    pub fn new(labels: &[String], row: Option<&RowWithUnits>) -> Self {
         let n = labels.len();
-
-        let items: Vec<QuizItem> = (0..n)
-            .flat_map(|i| {
-                (i + 1..n).map(move |j| QuizItem {
-                    label1: labels[i].to_string(),
-                    ref_value1: values.map(|v| v[i].clone()),
-                    label2: labels[j].to_string(),
-                    ref_value2: values.map(|v| v[j].clone()),
-                    score: AhpScore::Equal,
+        Self(
+            (0..n)
+                .flat_map(|i| {
+                    (i + 1..n).map(move |j| QuizItem {
+                        label1: labels[i].clone(),
+                        ref_value1: row.and_then(|r| Some((r.1[i], r.0.to_owned()))),
+                        label2: labels[j].clone(),
+                        ref_value2: row.and_then(|r| Some((r.1[j], r.0.to_owned()))),
+                        score: AhpScore::Equal,
+                    })
                 })
-            })
-            .collect();
-
-        Self(items)
+                .collect(),
+        )
     }
 
     pub fn scores(&self) -> &[QuizItem] {
