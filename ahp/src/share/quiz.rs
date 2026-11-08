@@ -1,7 +1,7 @@
 use crate::share::share::{RowWithUnits, Value};
 
 #[derive(Debug, Clone)]
-pub struct QuizPairMatrix(Vec<QuizItem>);
+pub struct QuizPairMatrix(pub(crate) Vec<QuizItem>);
 
 #[derive(Debug, Clone)]
 pub struct QuizItem {
@@ -20,9 +20,19 @@ impl QuizPairMatrix {
                 .flat_map(|i| {
                     (i + 1..n).map(move |j| QuizItem {
                         label1: labels[i].clone(),
-                        ref_value1: row.and_then(|r| Some((r.1[i], r.0.to_owned()))),
+                        ref_value1: row.and_then(|r| {
+                            Some(Value {
+                                data: r.1[i],
+                                unit: r.0.to_owned(),
+                            })
+                        }),
                         label2: labels[j].clone(),
-                        ref_value2: row.and_then(|r| Some((r.1[j], r.0.to_owned()))),
+                        ref_value2: row.and_then(|r| {
+                            Some(Value {
+                                data: r.1[j],
+                                unit: r.0.to_owned(),
+                            })
+                        }),
                         score: AhpScore::Equal,
                     })
                 })
