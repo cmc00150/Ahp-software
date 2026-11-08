@@ -1,4 +1,4 @@
-use crate::estructuras::PairMatrix;
+use crate::estructuras::pair_matrix::PairMatrix;
 
 const LIM_IT: u16 = 10_000;
 const TOLERANCE: f64 = 1e-12;
@@ -11,7 +11,7 @@ pub enum WeightMethod {
 }
 
 impl WeightMethod {
-    pub fn calc_weights(&self, a: &PairMatrix) -> Vec<f64> {
+    pub(crate) fn calc_weights(&self, a: &PairMatrix) -> Vec<f64> {
         let n = a.get_size();
 
         match self {
@@ -86,7 +86,7 @@ impl WeightMethod {
         }
     }
 
-    pub fn calc_cicr(&self, weights: &[f64], a: &PairMatrix) -> Option<(f64, f64)> {
+    pub(crate) fn calc_cicr(&self, weights: &[f64], a: &PairMatrix) -> Option<(f64, f64)> {
         match self {
             WeightMethod::EigenValues => {
                 let n = weights.len();
@@ -112,7 +112,7 @@ impl WeightMethod {
         }
     }
 
-    pub fn calc_lambda_max(&self, weights: &[f64], a: &PairMatrix) -> Option<f64> {
+    pub(crate) fn calc_lambda_max(&self, weights: &[f64], a: &PairMatrix) -> Option<f64> {
         match self {
             WeightMethod::EigenValues => {
                 let n = weights.len();
@@ -129,6 +129,31 @@ impl WeightMethod {
                 Some(aw.iter().sum())
             }
             _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct WeightsReport {
+    pub weights: Vec<f64>,
+    pub lambda_max: Option<f64>,
+    pub ci: Option<f64>,
+    pub cr: Option<f64>,
+}
+
+impl WeightsReport {
+    pub(crate) fn from_matrix(method: WeightMethod, m: &PairMatrix) -> Self {
+        let weights = method.calc_weights(m);
+        let lambda_max = method.calc_lambda_max(&weights, m);
+        let (ci, cr) = match method.calc_cicr(&weights, m) {
+            Some((ci, cr)) => (Some(ci), Some(cr)),
+            None => (None, None),
+        };
+        Self {
+            weights,
+            lambda_max,
+            ci,
+            cr,
         }
     }
 }

@@ -2,9 +2,11 @@ pub mod estructuras;
 pub mod pesos;
 
 #[cfg(test)]
-#[cfg(test)]
 mod tests {
-    use crate::estructuras::{AhpScore, PairMatrix, QuizPairMatrix, SaatyScore};
+    use crate::estructuras::{
+        pair_matrix::PairMatrix,
+        quiz::{AhpScore, QuizPairMatrix, SaatyScore},
+    };
     use crate::pesos::WeightMethod;
 
     fn redondear(x: f64, decimales: u32) -> f64 {
@@ -13,11 +15,11 @@ mod tests {
     }
 
     fn matriz_ejemplo() -> PairMatrix {
-        let criteria = vec!["c1", "c2", "c3"];
-        let mut q = QuizPairMatrix::new(&criteria);
+        let criteria: Vec<String> = ["c1", "c2", "c3"].iter().map(|s| s.to_string()).collect();
+        let mut q = QuizPairMatrix::new(&criteria, None);
         q.set_score(0, AhpScore::LeftDominates(SaatyScore::StronglyBetterPlus));
         q.set_score(1, AhpScore::LeftDominates(SaatyScore::SlightlyBetter));
-        q.set_score(2, AhpScore::RightDominates(SaatyScore::StronglyBetter));
+        q.set_score(2, AhpScore::RightDominates(SaatyScore::EqualPlus));
         PairMatrix::from_quiz(q)
     }
 

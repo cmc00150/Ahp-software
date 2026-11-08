@@ -1,79 +1,16 @@
-use std::rc::Rc;
+use crate::estructuras::quiz::{AhpScore, QuizPairMatrix};
 
 #[derive(Debug, Clone)]
-pub struct QuizPairMatrix {
-    labels: Vec<Rc<String>>,
-    data: Vec<QuizItem>,
-}
-
-#[derive(Debug, Clone)]
-pub struct QuizItem {
-    pub label1: Rc<String>,
-    pub label2: Rc<String>,
-    pub score: AhpScore,
-}
-
-impl QuizPairMatrix {
-    pub fn new(raw_labels: &[impl ToString]) -> Self {
-        let labels: Vec<Rc<String>> = raw_labels.iter().map(|s| Rc::new(s.to_string())).collect();
-        let mut data: Vec<QuizItem> = Vec::new();
-        let n = labels.len();
-
-        for i in 0..n {
-            for j in i + 1..n {
-                data.push(QuizItem {
-                    label1: Rc::clone(&labels[i]),
-                    label2: Rc::clone(&labels[j]),
-                    score: AhpScore::Equal,
-                });
-            }
-        }
-
-        Self { labels, data }
-    }
-
-    pub fn scores(&self) -> &[QuizItem] {
-        &self.data
-    }
-
-    pub fn set_score(&mut self, idx: usize, score: AhpScore) -> Option<()> {
-        self.data.get_mut(idx).and_then(|item| {
-            item.score = score;
-            Some(())
-        })
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum AhpScore {
-    LeftDominates(SaatyScore),
-    Equal,
-    RightDominates(SaatyScore),
-}
-
-#[derive(Debug, Clone)]
-pub enum SaatyScore {
-    EqualPlus = 2,
-    SlightlyBetter = 3,
-    SlightlyBetterPlus = 4,
-    StronglyBetter = 5,
-    StronglyBetterPlus = 6,
-    VeryStronglyBetter = 7,
-    VeryStronglyBetterPlus = 8,
-    ExtremelyBetter = 9,
-}
-
 pub struct PairMatrix {
-    labels: Vec<String>,
     size: usize,
     data: Vec<f64>,
 }
 
 impl PairMatrix {
     pub fn from_quiz(quiz: QuizPairMatrix) -> Self {
-        let size = quiz.labels.len();
+        let n = quiz.num_var();
         let data = quiz
-            .data
+            .0
             .into_iter()
             .map(|item| match item.score {
                 AhpScore::LeftDominates(s) => s as u8 as f64,
@@ -81,9 +18,8 @@ impl PairMatrix {
                 AhpScore::RightDominates(s) => 1.0 / s as u8 as f64,
             })
             .collect();
-        let labels = quiz.labels.into_iter().map(|rc| rc.to_string()).collect();
 
-        Self { labels, size, data }
+        Self { size: n, data }
     }
 
     fn map_idx(&self, i: usize, j: usize) -> usize {
