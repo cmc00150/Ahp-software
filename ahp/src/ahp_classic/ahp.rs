@@ -66,7 +66,7 @@ impl Ahp {
     pub fn submit_alternatives(&mut self, quizs: Vec<QuizPairMatrix>) -> Result<(), &'static str> {
         if quizs.len() != self.criteria_labels.len() {
             Err("[Ahp::sumbit_alternatives] Hay más cuestionarios que criterios en el sistema.")
-        } else if quizs[0].num_var() != self.criteria_labels.len() {
+        } else if quizs[0].num_var() != self.alternatives_labels.len() {
             Err(
                 "[Ahp::sumbit_alternatives] Alguno de los cuestionarios proporcionados no evalua el mismo número de alternativas que el sistema.",
             )
