@@ -23,8 +23,11 @@ export component AppWindow inherits Window {
     background: Theme.background;
     default-font-size: Theme.font-body;
 
+    // Starts with the system color scheme; the top-bar button switches it. The std widgets
+    // follow `Palette.color-scheme`, the custom components follow `Theme.dark`.
     init => {
-        Palette.color-scheme = ColorScheme.light;
+        Theme.dark = Palette.color-scheme == ColorScheme.dark;
+        Palette.color-scheme = Theme.dark ? ColorScheme.dark : ColorScheme.light;
     }
 
     VerticalLayout {
@@ -57,6 +60,13 @@ export component AppWindow inherits Window {
                     vertical-alignment: center;
                     overflow: elide;
                     horizontal-stretch: 1;
+                }
+                Button {
+                    text: Theme.dark ? "Modo claro" : "Modo oscuro";
+                    clicked => {
+                        Theme.dark = !Theme.dark;
+                        Palette.color-scheme = Theme.dark ? ColorScheme.dark : ColorScheme.light;
+                    }
                 }
                 Button {
                     text: "Guardar";

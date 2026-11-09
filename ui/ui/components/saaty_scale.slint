@@ -109,7 +109,7 @@ export component SaatyScale {
                         border-radius: self.width / 2;
                         background: parent.selected ? Theme.accent : (parent.in-span && root.position != 8 ? Theme.accent-soft : Theme.surface);
                         border-width: parent.selected ? 0px : 2px;
-                        border-color: dot-touch.has-hover ? Theme.accent : (parent.in-span && root.position != 8 ? Theme.accent : #b6c0cf);
+                        border-color: dot-touch.has-hover ? Theme.accent : (parent.in-span && root.position != 8 ? Theme.accent : Theme.dot-border);
                     }
                     dot-touch := TouchArea {
                         mouse-cursor: pointer;

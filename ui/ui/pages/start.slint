@@ -12,7 +12,7 @@ component MethodCard inherits Rectangle {
     height: 150px;
     border-radius: Theme.radius;
     border-width: root.selected ? 2px : 1px;
-    border-color: root.selected ? Theme.accent : (touch.has-hover ? #9fb3d1 : Theme.border);
+    border-color: root.selected ? Theme.accent : (touch.has-hover ? Theme.hover-border : Theme.border);
     background: root.selected ? Theme.accent-soft : Theme.surface;
     VerticalLayout {
         padding: 18px;

@@ -6,8 +6,12 @@ import { Card, PageTitle } from "../components/common.slint";
 
 // Colours of the category tags, by category position.
 global TagColors {
-    out property <[color]> text: [#1d4ed8, #15803d, #b45309, #7c3aed, #be185d, #0e7490, #4d7c0f, #b91c1c];
-    out property <[color]> background: [#dbe7fd, #dcfce7, #fef3c7, #ede9fe, #fce7f3, #cffafe, #ecfccb, #fee2e2];
+    out property <[color]> text: Theme.dark
+        ? [#93c5fd, #86efac, #fcd34d, #c4b5fd, #f9a8d4, #67e8f9, #bef264, #fca5a5]
+        : [#1d4ed8, #15803d, #b45309, #7c3aed, #be185d, #0e7490, #4d7c0f, #b91c1c];
+    out property <[color]> background: Theme.dark
+        ? [#1e3a5f, #14532d, #422006, #2e1065, #500724, #164e63, #1a2e05, #450a0a]
+        : [#dbe7fd, #dcfce7, #fef3c7, #ede9fe, #fce7f3, #cffafe, #ecfccb, #fee2e2];
 }
 
 component CategoryTag inherits Rectangle {

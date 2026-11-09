@@ -82,6 +82,7 @@ for matrix edits); a quiz shows the nearest Saaty integer.
       (route: delegated writer)
 - [x] T3 Slint UI: shell, start screen (mode, load/save file), classic flow (4 screens)
       (route: delegated writer)
+- [x] T5 Dark mode: Theme light/dark tokens, starts from the system scheme, top-bar toggle (route: inline, mechanical token edits)
 - [x] T4 Slint UI: AHPSort II flow (5 screens, local priority tables + charts)
       (route: delegated writer)
 

@@ -39,7 +39,7 @@ component QuizStepper inherits Rectangle {
             border-radius: self.width / 2;
             background: i <= root.current ? Theme.accent : Theme.surface;
             border-width: 2px;
-            border-color: i <= root.current || touch.has-hover ? Theme.accent : #b6c0cf;
+            border-color: i <= root.current || touch.has-hover ? Theme.accent : Theme.dot-border;
         }
         Text {
             y: 24px;

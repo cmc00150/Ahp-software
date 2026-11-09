@@ -110,7 +110,7 @@ export component MessageBanner inherits Rectangle {
     callback dismissed;
     visible: root.text != "";
     height: root.text != "" ? max(40px, label.preferred-height + 16px) : 0px;
-    background: root.is-error ? Theme.danger-soft : #e7f6ec;
+    background: root.is-error ? Theme.danger-soft : Theme.success-soft;
     HorizontalLayout {
         padding-left: 16px;
         padding-right: 8px;

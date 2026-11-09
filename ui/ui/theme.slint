@@ -1,18 +1,28 @@
-// Visual constants shared by every screen.
+// Visual constants shared by every screen. Every color has a light and a dark variant,
+// selected by `dark` (initialised from the system color scheme, toggled from the top bar).
 export global Theme {
-    out property <color> background: #f2f4f8;
-    out property <color> surface: #ffffff;
-    out property <color> surface-alt: #f6f8fb;
-    out property <color> border: #dbe1ea;
-    out property <color> text: #1e293b;
-    out property <color> muted: #64748b;
-    out property <color> accent: #2563eb;
-    out property <color> accent-soft: #dbe7fd;
-    out property <color> danger: #dc2626;
-    out property <color> danger-soft: #fde8e8;
-    out property <color> warning: #b45309;
-    out property <color> warning-soft: #fef3c7;
-    out property <color> success: #15803d;
+    in-out property <bool> dark: false;
+
+    out property <color> background: dark ? #0f141c : #f2f4f8;
+    out property <color> surface: dark ? #18202b : #ffffff;
+    out property <color> surface-alt: dark ? #1f2935 : #f6f8fb;
+    out property <color> border: dark ? #2e3a4a : #dbe1ea;
+    out property <color> text: dark ? #e2e8f0 : #1e293b;
+    out property <color> muted: dark ? #94a3b8 : #64748b;
+    out property <color> accent: dark ? #60a5fa : #2563eb;
+    out property <color> accent-soft: dark ? #1e3a5f : #dbe7fd;
+    out property <color> danger: dark ? #f87171 : #dc2626;
+    out property <color> danger-soft: dark ? #3b1d1d : #fde8e8;
+    out property <color> warning: dark ? #fbbf24 : #b45309;
+    out property <color> warning-soft: dark ? #3a2e12 : #fef3c7;
+    out property <color> success: dark ? #4ade80 : #15803d;
+    out property <color> success-soft: dark ? #163222 : #e7f6ec;
+    // Borders of inactive dots (Saaty scale, questionnaire stepper) and hovered cards.
+    out property <color> dot-border: dark ? #4b5768 : #b6c0cf;
+    out property <color> hover-border: dark ? #4f6a92 : #9fb3d1;
+    // Dimmed backdrop behind overlays.
+    out property <color> overlay: dark ? #000000aa : #0f172a66;
+
     out property <length> radius: 10px;
     out property <length> font-small: 12px;
     out property <length> font-body: 14px;
