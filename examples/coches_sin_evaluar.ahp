@@ -1,0 +1,30 @@
+# Fichero de proyecto AHP (formato TOML).
+#
+# - `alternatives`: nombres de las alternativas.
+# - `[[criteria]]`: un bloque por criterio con `name`, `unit` (opcional) y `values`
+#   (un valor por alternativa, en el mismo orden que `alternatives`).
+# - `[evaluations]` (opcional): comparaciones por pares en escala de Saaty con signo.
+#   Este fichero no las trae, así que la interfaz las preguntará.
+
+method = "classic"
+alternatives = ["Ibiza", "Golf", "Corolla", "Clio"]
+
+[[criteria]]
+name = "Precio"
+unit = "€"
+values = [18500.0, 29000.0, 31000.0, 17500.0]
+
+[[criteria]]
+name = "Consumo"
+unit = "L/100km"
+values = [5.6, 5.9, 4.5, 5.3]
+
+[[criteria]]
+name = "Potencia"
+unit = "CV"
+values = [110.0, 150.0, 140.0, 90.0]
+
+[[criteria]]
+name = "Maletero"
+unit = "L"
+values = [355.0, 380.0, 361.0, 391.0]

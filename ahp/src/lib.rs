@@ -1,6 +1,26 @@
 pub mod ahp_classic;
 pub mod ahp_shortII;
+pub mod project;
 pub mod share;
+
+pub use ahp_classic::ahp::Ahp;
+pub use ahp_shortII::{
+    ahp_shortII::{AhpShort, Priorities},
+    profile::Profile,
+};
+pub use project::{
+    Categories, ClassicOutcome, Criterion, Evaluations, FileEvaluations, MatrixView, Method,
+    MissingEvaluations, NamedVectors, ProfileType, Project, ProjectError, QuizSet, RangePoint,
+    ShortOutcome, classic_quizzes, quizzes, short_quizzes, solve_classic, solve_short,
+};
+pub use share::{
+    pesos::{WeightMethod, WeightsReport},
+    quiz::{
+        AhpScore, QuizItem, QuizPairMatrix, SaatyScore, ratio_to_signed, saaty_label_es,
+        signed_to_ratio,
+    },
+    share::{RowWithUnits, Table, Value},
+};
 
 #[cfg(test)]
 mod tests {

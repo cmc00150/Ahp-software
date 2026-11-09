@@ -4,6 +4,7 @@ const LIM_IT: u16 = 10_000;
 const TOLERANCE: f64 = 1e-12;
 const RI: [f64; 10] = [0.0, 0.0, 0.58, 0.9, 1.12, 1.24, 1.32, 1.41, 1.45, 1.49];
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WeightMethod {
     Approximated,
     GeometricMean,

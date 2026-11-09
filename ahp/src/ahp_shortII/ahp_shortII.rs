@@ -34,16 +34,20 @@ impl AhpShort {
         alt_labels: Vec<impl ToString>,
         values: Table,
         category_labels: Vec<String>,
-        mut profiles: Vec<Profile>,
+        profiles: Vec<Profile>,
         ranges: Vec<f64>,
     ) -> Result<Self, &'static str> {
-        if alt_labels.len() != values.len() || c_labels.len() != values[0].1.len() {
+        // Each row of `values` is a criterion with one value per alternative
+        if c_labels.len() != values.len()
+            || values.iter().any(|(_, row)| row.len() != alt_labels.len())
+        {
             Err(
                 "[AhpShort::new] La cardinalidad de la matriz de valores no coincide con los vectores de nombes, asegurate de que los criterios son las filas y las alternativas las columnas.",
             )
-        } else if Some(category_labels.len()) != profiles.len().checked_sub(1)
-            && category_labels.len() != profiles.len()
+        } else if profiles.len() != category_labels.len()
+            && profiles.len() + 1 != category_labels.len()
         {
+            // Central: one profile per category. Limiting: the last category has no profile.
             Err("[AhpShort::new] Faltan o sobran perfiles con respecto a las categorías.")
         } else if ranges.len() != c_labels.len() {
             Err("[AhpShort::new] Faltan o sobran rangos de los criterios.")
@@ -51,10 +55,14 @@ impl AhpShort {
             Ok(Self {
                 criteria_labels: c_labels.into_iter().map(|l| l.to_string()).collect(),
                 alternatives_labels: alt_labels.into_iter().map(|l| l.to_string()).collect(),
-                categories: category_labels
-                    .into_iter()
-                    .map(|l| (l, profiles.pop()))
-                    .collect(),
+                // Category k gets profile k; with one profile less, the last one gets `None`
+                categories: {
+                    let mut profiles = profiles.into_iter();
+                    category_labels
+                        .into_iter()
+                        .map(|l| (l, profiles.next()))
+                        .collect()
+                },
                 values,
                 ranges,
 
@@ -63,6 +71,29 @@ impl AhpShort {
                 ranges_priorities: None,
             })
         }
+    }
+
+    pub fn criteria_labels(&self) -> &[String] {
+        &self.criteria_labels
+    }
+
+    pub fn alternatives_labels(&self) -> &[String] {
+        &self.alternatives_labels
+    }
+
+    /// Values table: one row per criterion, one column per alternative.
+    pub fn values(&self) -> &Table {
+        &self.values
+    }
+
+    /// Category names, in the order given to [`AhpShort::new`].
+    pub fn category_labels(&self) -> Vec<&str> {
+        self.categories.iter().map(|(l, _)| l.as_str()).collect()
+    }
+
+    /// Maximum of each criterion range (RP points go from 0 to this value).
+    pub fn ranges(&self) -> &[f64] {
+        &self.ranges
     }
 
     pub fn evaluate_criteria(&self) -> QuizPairMatrix {
@@ -196,12 +227,26 @@ impl AhpShort {
         col: usize,
         value: f64,
     ) -> Result<(), &'static str> {
-        self.ranges_matrix
+        let matrix = self
+            .ranges_matrix
             .as_mut()
-            .ok_or("[AhpShort::set_matrix_alternative_value] Las matrices de rangos todavía no existen")?
+            .ok_or("[AhpShort::set_matrix_range_value] Las matrices de rangos todavía no existen")?
             .get_mut(criterion_idx)
-            .ok_or("[AhpShort::set_matrix_alternative_value] El criterio no existe")?
-            .set(row, col, value)
+            .ok_or("[AhpShort::set_matrix_range_value] El criterio no existe")?;
+        matrix.set(row, col, value)?;
+
+        // Keep the range priorities in sync with the edited matrix
+        let weights = WeightMethod::EigenValues.calc_weights(matrix);
+        if let Some(row) = self
+            .ranges_priorities
+            .as_mut()
+            .and_then(|p| p.get_mut(criterion_idx))
+        {
+            for (prio, w) in row.iter_mut().zip(weights) {
+                prio.weight = Some(w);
+            }
+        }
+        Ok(())
     }
 
     pub fn criteria_weights(&self, method: WeightMethod) -> Option<WeightsReport> {
@@ -461,6 +506,154 @@ fn interpolate(points: &[(f64, f64)], v: f64) -> f64 {
         }
         (Some(&(_, p)), _) | (_, Some(&(_, p))) => p, // coincide con un punto o está fuera
         (None, None) => 0.0,                          // sin puntos
+    }
+}
+
+#[cfg(test)]
+mod constructor_tests {
+    use super::AhpShort;
+    use crate::ahp_shortII::profile::Profile;
+    use crate::share::{
+        pesos::WeightMethod,
+        share::{Table, Value},
+    };
+
+    fn one_criterion(v: f64) -> Vec<Value> {
+        vec![Value {
+            data: v,
+            unit: String::new(),
+        }]
+    }
+
+    fn names(n: &[&str]) -> Vec<String> {
+        n.iter().map(|s| s.to_string()).collect()
+    }
+
+    fn table() -> Table {
+        // 1 criterion x 2 alternatives
+        vec![(String::new(), vec![15.0, 35.0])]
+    }
+
+    fn central(values: &[f64]) -> Vec<Profile> {
+        values
+            .iter()
+            .map(|&v| Profile::Central(one_criterion(v)))
+            .collect()
+    }
+
+    #[test]
+    fn new_validates_criteria_rows_and_alternative_columns() {
+        // 1 criterion x 2 alternatives: rejected before the fix
+        let ok = AhpShort::new(
+            vec!["c"],
+            vec!["a1", "a2"],
+            table(),
+            names(&["A", "B"]),
+            central(&[10.0, 30.0]),
+            vec![50.0],
+        );
+        assert!(ok.is_ok());
+        let ok = ok.unwrap();
+        assert_eq!(ok.category_labels(), vec!["A", "B"]);
+        assert_eq!(ok.ranges(), &[50.0]);
+        assert_eq!(ok.values().len(), 1);
+
+        let empty = AhpShort::new(
+            vec!["c"],
+            vec!["a1"],
+            Vec::new(),
+            names(&["A"]),
+            central(&[10.0]),
+            vec![50.0],
+        );
+        assert!(empty.is_err());
+    }
+
+    #[test]
+    fn new_accepts_limiting_profiles_and_rejects_wrong_counts() {
+        let limiting = |n: usize| -> Vec<Profile> {
+            (0..n)
+                .map(|k| Profile::Limiting(one_criterion(10.0 * (k + 1) as f64)))
+                .collect()
+        };
+        let build = |profiles| {
+            AhpShort::new(
+                vec!["c"],
+                vec!["a1", "a2"],
+                table(),
+                names(&["A", "B", "C"]),
+                profiles,
+                vec![50.0],
+            )
+        };
+        assert!(build(limiting(2)).is_ok(), "n-1 limiting profiles");
+        assert!(
+            build(central(&[10.0, 20.0, 30.0])).is_ok(),
+            "n central profiles"
+        );
+        assert!(build(limiting(4)).is_err(), "n+1 profiles");
+        assert!(build(limiting(1)).is_err(), "n-2 profiles");
+    }
+
+    #[test]
+    fn category_k_gets_profile_k() {
+        let mut ahp = AhpShort::new(
+            vec!["c"],
+            vec!["a1", "a2"],
+            table(),
+            names(&["A", "B", "C"]),
+            central(&[10.0, 20.0, 30.0]),
+            vec![50.0],
+        )
+        .unwrap();
+        let quizzes = ahp.evaluate_ranges();
+        let labels = quizzes[0].1.labels();
+        let (_, prios) = ahp.ranges_priorities().unwrap()[0];
+        for (label, prio) in labels.iter().zip(prios) {
+            match (label.as_str(), prio.profile) {
+                ("A", p) => assert_eq!((p, prio.original), (Some(0), 10.0)),
+                ("B", p) => assert_eq!((p, prio.original), (Some(1), 20.0)),
+                ("C", p) => assert_eq!((p, prio.original), (Some(2), 30.0)),
+                (_, p) => assert_eq!(p, None),
+            }
+        }
+    }
+
+    #[test]
+    fn set_matrix_range_value_refreshes_range_priorities() {
+        let mut ahp = AhpShort::new(
+            vec!["c"],
+            vec!["a1", "a2"],
+            table(),
+            names(&["A", "B"]),
+            central(&[10.0, 30.0]),
+            vec![50.0],
+        )
+        .unwrap();
+        let quizzes = ahp.evaluate_ranges();
+        ahp.submit_ranges(quizzes.into_iter().map(|(_, q)| q).collect())
+            .unwrap();
+        let before: Vec<f64> = ahp.ranges_priorities().unwrap()[0]
+            .1
+            .iter()
+            .map(|p| p.weight.unwrap())
+            .collect();
+
+        ahp.set_matrix_range_value(0, 0, 1, 7.0).unwrap();
+
+        let expected = ahp
+            .ranges_weights(0, WeightMethod::EigenValues)
+            .unwrap()
+            .weights;
+        let after: Vec<f64> = ahp.ranges_priorities().unwrap()[0]
+            .1
+            .iter()
+            .map(|p| p.weight.unwrap())
+            .collect();
+        assert_ne!(before, after);
+        for (a, e) in after.iter().zip(&expected) {
+            assert!((a - e).abs() < 1e-12);
+        }
     }
 }
 

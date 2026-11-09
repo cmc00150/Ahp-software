@@ -1,0 +1,45 @@
+# Fichero de proyecto AHP (formato TOML).
+#
+# - `alternatives`: nombres de las alternativas.
+# - `[[criteria]]`: un bloque por criterio con `name`, `unit` (opcional) y `values`
+#   (un valor por alternativa, en el mismo orden que `alternatives`).
+# - `[evaluations]` (opcional): comparaciones por pares en escala de Saaty con signo, en
+#   el orden del cuestionario (0,1), (0,2), ..., (1,2), ... x >= 1: gana el de la izquierda
+#   (a_ij = x); x <= -1: gana el de la derecha (a_ij = 1/|x|); 1: iguales.
+#   `criteria` compara los criterios; `[evaluations.alternatives]` compara las
+#   alternativas bajo cada criterio (clave = nombre del criterio).
+
+method = "classic"
+alternatives = ["Ibiza", "Golf", "Corolla", "Clio"]
+
+[[criteria]]
+name = "Precio"
+unit = "€"
+values = [18500.0, 29000.0, 31000.0, 17500.0]
+
+[[criteria]]
+name = "Consumo"
+unit = "L/100km"
+values = [5.6, 5.9, 4.5, 5.3]
+
+[[criteria]]
+name = "Potencia"
+unit = "CV"
+values = [110.0, 150.0, 140.0, 90.0]
+
+[[criteria]]
+name = "Maletero"
+unit = "L"
+values = [355.0, 380.0, 361.0, 391.0]
+
+[evaluations]
+# Precio-Consumo, Precio-Potencia, Precio-Maletero, Consumo-Potencia, Consumo-Maletero,
+# Potencia-Maletero
+criteria = [3, 5, 7, 2, 4, 2]
+
+[evaluations.alternatives]
+# Ibiza-Golf, Ibiza-Corolla, Ibiza-Clio, Golf-Corolla, Golf-Clio, Corolla-Clio
+"Precio" = [5, 6, -2, 2, -6, -7]
+"Consumo" = [2, -5, -2, -6, -3, 4]
+"Potencia" = [-5, -4, 3, 2, 7, 6]
+"Maletero" = [-3, 1, -4, 2, -2, -3]

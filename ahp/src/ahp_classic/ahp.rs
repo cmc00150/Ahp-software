@@ -20,7 +20,10 @@ impl Ahp {
         alt_labels: Vec<impl ToString>,
         values: Table,
     ) -> Result<Self, &'static str> {
-        if alt_labels.len() != values.len() || c_labels.len() != values[0].1.len() {
+        // Each row of `values` is a criterion with one value per alternative
+        if c_labels.len() != values.len()
+            || values.iter().any(|(_, row)| row.len() != alt_labels.len())
+        {
             Err(
                 "[Ahp::new] La cardinalidad de la matriz de valores no coincide con los vectores de nombes, asegurate de que los criterios son las filas y las alternativas las columnas.",
             )
@@ -33,6 +36,19 @@ impl Ahp {
                 alt_matrices: None,
             })
         }
+    }
+
+    pub fn criteria_labels(&self) -> &[String] {
+        &self.criteria_labels
+    }
+
+    pub fn alternatives_labels(&self) -> &[String] {
+        &self.alternatives_labels
+    }
+
+    /// Values table: one row per criterion, one column per alternative.
+    pub fn values(&self) -> &Table {
+        &self.values
     }
 
     pub fn evaluate_criteria(&self) -> QuizPairMatrix {
@@ -66,17 +82,15 @@ impl Ahp {
     pub fn submit_alternatives(&mut self, quizs: Vec<QuizPairMatrix>) -> Result<(), &'static str> {
         if quizs.len() != self.criteria_labels.len() {
             Err("[Ahp::sumbit_alternatives] Hay más cuestionarios que criterios en el sistema.")
-        } else if quizs[0].num_var() != self.alternatives_labels.len() {
+        } else if quizs
+            .iter()
+            .any(|q| q.num_var() != self.alternatives_labels.len())
+        {
             Err(
                 "[Ahp::sumbit_alternatives] Alguno de los cuestionarios proporcionados no evalua el mismo número de alternativas que el sistema.",
             )
         } else {
-            self.alt_matrices = Some(
-                quizs
-                    .into_iter()
-                    .map(|q| PairMatrix::from_quiz(q))
-                    .collect(),
-            );
+            self.alt_matrices = Some(quizs.into_iter().map(PairMatrix::from_quiz).collect());
             Ok(())
         }
     }
@@ -172,5 +186,53 @@ impl Ahp {
 
         ranking.sort_by(|a, b| a.1.total_cmp(&b.1));
         Ok(ranking)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Ahp;
+
+    fn table(rows: &[&[f64]]) -> crate::share::share::Table {
+        rows.iter().map(|r| (String::new(), r.to_vec())).collect()
+    }
+
+    #[test]
+    fn new_accepts_criteria_rows_and_alternative_columns() {
+        // 3 criteria x 2 alternatives: rejected before the fix (lengths were compared swapped)
+        let ahp = Ahp::new(
+            vec!["c1", "c2", "c3"],
+            vec!["a1", "a2"],
+            table(&[&[1.0, 2.0], &[3.0, 4.0], &[5.0, 6.0]]),
+        );
+        assert!(ahp.is_ok());
+        let ahp = ahp.unwrap();
+        assert_eq!(ahp.criteria_labels().len(), 3);
+        assert_eq!(ahp.alternatives_labels().len(), 2);
+        assert_eq!(ahp.values().len(), 3);
+    }
+
+    #[test]
+    fn new_rejects_mismatched_tables_without_panicking() {
+        // Swapped table (alternatives as rows)
+        assert!(
+            Ahp::new(
+                vec!["c1", "c2", "c3"],
+                vec!["a1", "a2"],
+                table(&[&[1.0, 2.0, 3.0], &[4.0, 5.0, 6.0]]),
+            )
+            .is_err()
+        );
+        // A ragged row
+        assert!(
+            Ahp::new(
+                vec!["c1", "c2"],
+                vec!["a1", "a2"],
+                table(&[&[1.0, 2.0], &[3.0]])
+            )
+            .is_err()
+        );
+        // Empty values with labels: used to panic on `values[0]`
+        assert!(Ahp::new(vec!["c1"], vec!["a1"], table(&[])).is_err());
     }
 }

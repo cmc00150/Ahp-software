@@ -10,7 +10,7 @@ impl PairMatrix {
     pub fn from_quiz(quiz: QuizPairMatrix) -> Self {
         let n = quiz.num_var();
         let data = quiz
-            .0
+            .items
             .into_iter()
             .map(|item| match item.score {
                 AhpScore::LeftDominates(s) => s as u8 as f64,
