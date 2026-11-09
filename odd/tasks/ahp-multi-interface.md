@@ -78,7 +78,7 @@ for matrix edits); a quiz shows the nearest Saaty integer.
 - [x] T0 Explore library and environment (route: inline, ~1.3k lines read once)
 - [x] T1 Workspace restructure + library fixes + `.ahp` format + solve API + examples + tests
       (route: delegated writer — 2+ non-trivial files)
-- [ ] T2 CLI `ahp` with `classic`/`shortII`, `--no-verbose`, interactive questionnaire
+- [x] T2 CLI `ahp` with `classic`/`shortII`, `--no-verbose`, interactive questionnaire
       (route: delegated writer)
 - [ ] T3 Slint UI: shell, start screen (mode, load/save file), classic flow (4 screens)
       (route: delegated writer)
@@ -108,8 +108,13 @@ for matrix edits); a quiz shows the nearest Saaty integer.
 ## Progress / evidence
 
 - Baseline: `cargo test -p ahp` → 15 passed.
-- T1: delegated writer; `cargo test --workspace` → 41 passed (parent spot check); bugs 1-4 fixed with regression tests; `ahp::project` API + 4 example files. Range evaluation order = evaluate_ranges order (values DESC, RP6..RP1).
+- T1: delegated writer; `cargo test --workspace` → 41 passed (parent spot check); bugs 1-4 fixed with regression tests; `ahp::project` API + 4 example files. Range evaluation order = evaluate_ranges order (values DESC, RP6..RP1). Commit `15e75f7`.
+- T1 review: risk medium, consent granted, lens reliability → approved and acknowledged (lineage review-9064802aed7a4758). Reviewed boundary advances to `15e75f7`.
+  Advisory follow-ups (non-blocking): R3-001 solve_* accept non-finite/|x|<1 evaluation values (validate values in check_evaluations — scheduled with T3, the UI edits matrices); R3-002/R3-004 limiting mode semantics only enforced at project layer; R3-003 London example test should assert exact classes; R3-005 set_matrix_range_value always uses EigenValues.
+- T2: delegated writer; `cargo test --workspace` → 41 + 15 + 13 passed (parent spot check); smoke `ahp classic examples/coches.ahp --no-verbose` OK.
+  Note: limiting-profile convention in the library = profile k is the UPPER limit of category k and the profile-less LAST category collects everything above (categories declared worst→best). The UI must explain this.
+- Delivery strategy: ask-on-risk → user chose `feature-branch-chain`.
 
 ## Next step
 
-T2 (CLI).
+T3 (UI shell + classic).

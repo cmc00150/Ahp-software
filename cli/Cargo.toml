@@ -1,0 +1,13 @@
+[package]
+name = "ahp-cli"
+version = "0.1.0"
+edition = "2024"
+description = "Command-line interface for classic AHP and AHPSort II projects (.ahp files)"
+
+[[bin]]
+name = "ahp"
+path = "src/main.rs"
+
+[dependencies]
+ahp = { path = "../ahp" }
+clap = { version = "4.6.7", features = ["derive"] }
