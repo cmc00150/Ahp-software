@@ -390,7 +390,11 @@ impl AppState {
         }
         self.replace_project(project, file, complete);
         self.evaluations = evaluations;
-        self.reshape_if_needed();
+        // Completing the profiles changes the range questionnaires: any answer reset here was
+        // not really in the file, so jumping straight to the result is no longer possible.
+        if self.reshape_if_needed() {
+            self.can_jump_to_result = false;
+        }
         warning
     }
 
@@ -412,14 +416,20 @@ impl AppState {
     }
 
     /// Defensive: makes every evaluation vector match its questionnaire size.
-    fn reshape_if_needed(&mut self) {
+    /// Returns whether some questionnaire had to be reset.
+    fn reshape_if_needed(&mut self) -> bool {
         let fresh = Evaluations::defaults(&self.project, self.method);
+        let mut reset = false;
         if self.evaluations.criteria.len() != fresh.criteria.len() {
             self.evaluations.criteria = fresh.criteria;
+            reset = true;
         }
-        self.evaluations
-            .per_criterion
-            .resize(fresh.per_criterion.len(), Vec::new());
+        if self.evaluations.per_criterion.len() != fresh.per_criterion.len() {
+            self.evaluations
+                .per_criterion
+                .resize(fresh.per_criterion.len(), Vec::new());
+            reset = true;
+        }
         for (slot, default) in self
             .evaluations
             .per_criterion
@@ -428,8 +438,10 @@ impl AppState {
         {
             if slot.len() != default.len() {
                 *slot = default;
+                reset = true;
             }
         }
+        reset
     }
 
     /// Switches method. The current evaluations are kept aside (switching back restores
@@ -451,7 +463,7 @@ impl AppState {
         self.stashed = Some((self.method, previous));
         self.method = method;
         self.project.method = Some(method);
-        self.reshape_if_needed();
+        let _ = self.reshape_if_needed();
         self.max_reached = self.max_reached.min(Screen::Data);
         if !Screen::flow(method).contains(&self.screen) {
             self.screen = Screen::Data;
@@ -1638,5 +1650,48 @@ mod tests {
             remap_pairs(&values, &old, &[Profile(1), Reference(1), Reference(0)]),
             None
         );
+    }
+
+    #[test]
+    fn reshaping_reports_whether_some_answers_were_reset() {
+        let mut st = loaded("londres.ahp");
+        assert!(!st.reshape_if_needed());
+        st.evaluations.per_criterion[0].pop();
+        assert!(st.reshape_if_needed());
+        assert_eq!(
+            st.evaluations.per_criterion[0],
+            Evaluations::defaults(&st.project, Method::ShortII).per_criterion[0]
+        );
+    }
+
+    #[test]
+    fn padding_profiles_on_load_disables_the_jump_to_result() {
+        let mut project = Project::load(example("londres.ahp")).unwrap();
+        project.criteria[0].profiles.pop();
+        let mut st = AppState::new();
+        let warning = st.load_project(project, None);
+        assert!(warning.is_some());
+        assert_eq!(
+            st.project.criteria[0].profiles.len(),
+            st.project.criteria[1].profiles.len()
+        );
+        assert!(!st.can_jump_to_result);
+    }
+
+    #[test]
+    fn empty_or_repeated_category_names_never_reach_the_classification() {
+        for bad in ["", "   ", "Medio"] {
+            let mut st = loaded("londres.ahp");
+            st.rename_category(0, bad);
+            assert!(st.jump_to_result().is_err(), "name {bad:?}");
+            assert_eq!(st.screen, Screen::Data);
+            assert!(!st.data_errors.is_empty(), "name {bad:?}");
+            assert!(st.advance().is_err(), "name {bad:?}");
+            assert!(st.short_outcome().is_none());
+
+            st.rename_category(0, "Alto");
+            assert!(st.jump_to_result().is_ok(), "name {bad:?}");
+            assert!(st.data_errors.is_empty());
+        }
     }
 }
