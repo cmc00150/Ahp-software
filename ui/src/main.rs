@@ -57,6 +57,9 @@ fn load(ui: &AppWindow, st: &mut AppState, path: PathBuf) {
     models::refresh(ui, st);
 }
 
+/// Asks for a file name and saves. The dialog runs on its own thread (`AsyncFileDialog`) and is
+/// awaited on the Slint event loop, so the window keeps answering while it is open; a blocking
+/// dialog freezes the event loop and the desktop reports "La aplicación no responde".
 fn save(ui: &AppWindow, state: &Shared) {
     let (dir, name) = {
         let st = state.borrow();
@@ -75,25 +78,34 @@ fn save(ui: &AppWindow, state: &Shared) {
         );
         (dir, name)
     };
-    let mut dialog = rfd::FileDialog::new()
+    let mut dialog = rfd::AsyncFileDialog::new()
         .set_title("Guardar proyecto")
         .add_filter("Proyecto AHP", &["ahp"])
         .set_file_name(name);
     if let Some(dir) = dir {
         dialog = dialog.set_directory(dir);
     }
-    let Some(mut path) = dialog.save_file() else {
-        return;
-    };
-    if path.extension().is_none_or(|e| e != "ahp") {
-        path.set_extension("ahp");
+    let weak = ui.as_weak();
+    let state = state.clone();
+    let spawned = slint::spawn_local(async move {
+        let Some(handle) = dialog.save_file().await else {
+            return;
+        };
+        let Some(ui) = weak.upgrade() else { return };
+        let mut path = handle.path().to_path_buf();
+        if path.extension().is_none_or(|e| e != "ahp") {
+            path.set_extension("ahp");
+        }
+        let mut st = state.borrow_mut();
+        match st.save_to(&path) {
+            Ok(()) => models::show_message(&ui, &format!("Guardado en {}", path.display()), false),
+            Err(e) => models::show_message(&ui, &e, true),
+        }
+        models::refresh_nav(&ui, &st);
+    });
+    if let Err(e) = spawned {
+        models::show_message(ui, &format!("No se pudo abrir el diálogo: {e}"), true);
     }
-    let mut st = state.borrow_mut();
-    match st.save_to(&path) {
-        Ok(()) => models::show_message(ui, &format!("Guardado en {}", path.display()), false),
-        Err(e) => models::show_message(ui, &e, true),
-    }
-    models::refresh_nav(ui, &st);
 }
 
 fn wire_navigation(ui: &AppWindow, state: &Shared) {
@@ -146,13 +158,22 @@ fn wire_navigation(ui: &AppWindow, state: &Shared) {
         let weak = ui.as_weak();
         let state = state.clone();
         move || {
-            let Some(ui) = weak.upgrade() else { return };
-            let picked = rfd::FileDialog::new()
+            // Same as `save`: an async dialog keeps the event loop (and the window) responsive.
+            let dialog = rfd::AsyncFileDialog::new()
                 .set_title("Cargar proyecto")
-                .add_filter("Proyecto AHP", &["ahp"])
-                .pick_file();
-            if let Some(path) = picked {
-                load(&ui, &mut state.borrow_mut(), path);
+                .add_filter("Proyecto AHP", &["ahp"]);
+            let task_weak = weak.clone();
+            let state = state.clone();
+            let spawned = slint::spawn_local(async move {
+                let Some(handle) = dialog.pick_file().await else {
+                    return;
+                };
+                if let Some(ui) = task_weak.upgrade() {
+                    load(&ui, &mut state.borrow_mut(), handle.path().to_path_buf());
+                }
+            });
+            if let (Err(e), Some(ui)) = (spawned, weak.upgrade()) {
+                models::show_message(&ui, &format!("No se pudo abrir el diálogo: {e}"), true);
             }
         }
     });
