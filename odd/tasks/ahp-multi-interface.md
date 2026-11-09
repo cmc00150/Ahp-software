@@ -113,6 +113,7 @@ for matrix edits); a quiz shows the nearest Saaty integer.
   Advisory follow-ups (non-blocking): R3-001 solve_* accept non-finite/|x|<1 evaluation values (validate values in check_evaluations — scheduled with T3, the UI edits matrices); R3-002/R3-004 limiting mode semantics only enforced at project layer; R3-003 London example test should assert exact classes; R3-005 set_matrix_range_value always uses EigenValues.
 - T2: delegated writer; `cargo test --workspace` → 41 + 15 + 13 passed (parent spot check); smoke `ahp classic examples/coches.ahp --no-verbose` OK.
   Note: limiting-profile convention in the library = profile k is the UPPER limit of category k and the profile-less LAST category collects everything above (categories declared worst→best). The UI must explain this.
+- T2 commit `7e7e77e`. T2 review: medium, granted, lens reliability → approved + acknowledged (lineage review-dfdcd27cb495aae3). Advisory R3-001 (save before solve) fixed in a follow-up commit; R3-002 (weak mismatch test) and R3-003 (unwrap_or on missing list) left as follow-ups.
 - Delivery strategy: ask-on-risk → user chose `feature-branch-chain`.
 
 ## Next step

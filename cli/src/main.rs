@@ -133,9 +133,6 @@ fn run(method: Method, args: RunArgs) -> Result<String, String> {
     let mut project = Project::load(&args.file)
         .map_err(|e| format!("No se pudo cargar «{}»: {e}", args.file.display()))?;
     let ev = complete_evaluations(&project, method)?;
-    if let Some(out) = &args.save {
-        save(&mut project, &ev, method, out)?;
-    }
     let verbose = !args.no_verbose;
     let text = match method {
         Method::Classic => {
@@ -147,6 +144,10 @@ fn run(method: Method, args: RunArgs) -> Result<String, String> {
             report::short(&project, &outcome, verbose)
         }
     };
+    // Save only after the solver accepted the project, so a rejected state is never written.
+    if let Some(out) = &args.save {
+        save(&mut project, &ev, method, out)?;
+    }
     Ok(text)
 }
 
