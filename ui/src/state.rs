@@ -12,8 +12,8 @@ use std::{
 };
 
 use ahp::{
-    Categories, ClassicOutcome, Criterion, Evaluations, Method, ProfileType, Project, ShortOutcome,
-    solve_classic, solve_short,
+    Categories, ClassicOutcome, Criterion, Evaluations, Method, ProfileType, Project,
+    solve_classic, solve_sort, sortOutcome,
 };
 
 use crate::convert::{pair_index, parse_number, parse_ratio, position_to_signed, set_pair};
@@ -45,7 +45,7 @@ impl Screen {
         Screen::Matrices,
         Screen::Ranking,
     ];
-    const SHORT: [Screen; 6] = [
+    const sort: [Screen; 6] = [
         Screen::Start,
         Screen::Data,
         Screen::Quiz,
@@ -58,7 +58,7 @@ impl Screen {
     pub fn flow(method: Method) -> &'static [Screen] {
         match method {
             Method::Classic => &Self::CLASSIC,
-            Method::ShortII => &Self::SHORT,
+            Method::sortII => &Self::sort,
         }
     }
 
@@ -98,7 +98,7 @@ impl Screen {
 #[derive(Debug, Clone)]
 pub enum Outcome {
     Classic(ClassicOutcome),
-    Short(ShortOutcome),
+    sort(sortOutcome),
 }
 
 /// A change of the shape of the data table.
@@ -176,7 +176,7 @@ fn default_categories() -> Categories {
 
 /// Gives an AHPSort II project categories (if it has none) and one profile per category with
 /// a profile in every criterion. Returns whether some profile list had to be completed.
-fn ensure_short_shape(project: &mut Project) -> bool {
+fn ensure_sort_shape(project: &mut Project) -> bool {
     if project.categories.is_none() {
         project.categories = Some(default_categories());
     }
@@ -272,8 +272,8 @@ pub fn blank_project(method: Method) -> Project {
         criteria: vec![criterion(1), criterion(2)],
         ..Project::default()
     };
-    if method == Method::ShortII {
-        ensure_short_shape(&mut project);
+    if method == Method::sortII {
+        ensure_sort_shape(&mut project);
     }
     project
 }
@@ -382,7 +382,7 @@ impl AppState {
             });
         }
         // AHPSort II needs categories and one profile per category with a profile.
-        if self.method == Method::ShortII && ensure_short_shape(&mut project) {
+        if self.method == Method::sortII && ensure_sort_shape(&mut project) {
             warning.get_or_insert_with(|| {
                 "Algunos criterios no tenían un perfil por categoría; se han completado con 0."
                     .into()
@@ -450,8 +450,8 @@ impl AppState {
         if method == self.method {
             return;
         }
-        if method == Method::ShortII {
-            ensure_short_shape(&mut self.project);
+        if method == Method::sortII {
+            ensure_sort_shape(&mut self.project);
         }
         let incoming = match self.stashed.take() {
             Some((m, ev)) if m == method => ev,
@@ -615,8 +615,8 @@ impl AppState {
     /// AHPSort II evaluations: the current ones or the ones kept aside while in classic mode.
     fn range_evaluations_mut(&mut self) -> Option<&mut Evaluations> {
         match (self.method, &mut self.stashed) {
-            (Method::ShortII, _) => Some(&mut self.evaluations),
-            (Method::Classic, Some((Method::ShortII, ev))) => Some(ev),
+            (Method::sortII, _) => Some(&mut self.evaluations),
+            (Method::Classic, Some((Method::sortII, ev))) => Some(ev),
             _ => None,
         }
     }
@@ -881,7 +881,7 @@ impl AppState {
                 criterion(c),
             ));
         }
-        if self.method != Method::ShortII {
+        if self.method != Method::sortII {
             return None;
         }
         if let Some(&c) = self.invalid_ranges.keys().next() {
@@ -929,7 +929,7 @@ impl AppState {
             Method::Classic => {
                 solve_classic(&self.project, &self.evaluations).map(Outcome::Classic)
             }
-            Method::ShortII => solve_short(&self.project, &self.evaluations).map(Outcome::Short),
+            Method::sortII => solve_sort(&self.project, &self.evaluations).map(Outcome::sort),
         };
         self.outcome = Some(outcome.map_err(|e| e.to_string())?);
         Ok(())
@@ -942,9 +942,9 @@ impl AppState {
         }
     }
 
-    pub fn short_outcome(&self) -> Option<&ShortOutcome> {
+    pub fn sort_outcome(&self) -> Option<&sortOutcome> {
         match &self.outcome {
-            Some(Outcome::Short(o)) => Some(o),
+            Some(Outcome::sort(o)) => Some(o),
             _ => None,
         }
     }
@@ -1010,7 +1010,7 @@ impl AppState {
         let n = match (card, self.method) {
             (0, _) => self.project.criteria.len(),
             (_, Method::Classic) => self.project.alternatives.len(),
-            (k, Method::ShortII) => self
+            (k, Method::sortII) => self
                 .project
                 .criteria
                 .get(k - 1)
@@ -1035,7 +1035,7 @@ fn sync_file_evaluations(project: &mut Project, ev: &Evaluations, method: Method
     let names = project.criteria_names();
     let other = match method {
         Method::Classic => &mut project.evaluations.ranges,
-        Method::ShortII => &mut project.evaluations.alternatives,
+        Method::sortII => &mut project.evaluations.alternatives,
     };
     other.0.retain(|(name, _)| names.contains(name));
 }
@@ -1061,7 +1061,7 @@ fn shift_removed(
 pub fn method_name(method: Method) -> &'static str {
     match method {
         Method::Classic => "AHP clásico",
-        Method::ShortII => "AHPSort II",
+        Method::sortII => "AHPSort II",
     }
 }
 
@@ -1253,7 +1253,7 @@ mod tests {
     #[test]
     fn reshape_keeps_range_questionnaires_for_ahpsort() {
         // RP1..RP6 plus the three default profiles: 9 points, 36 pairs.
-        let mut project = blank_project(Method::ShortII);
+        let mut project = blank_project(Method::sortII);
         let old = Evaluations {
             criteria: vec![3.0],
             per_criterion: vec![vec![2.0; 36], vec![-2.0; 36]],
@@ -1262,7 +1262,7 @@ mod tests {
         let ev = reshape_evaluations(
             &old,
             &project,
-            Method::ShortII,
+            Method::sortII,
             StructureChange::AddAlternative,
         );
         assert_eq!(ev, old);
@@ -1310,8 +1310,8 @@ mod tests {
     fn switching_method_preserves_classic_answers() {
         let mut st = loaded("coches.ahp");
         let classic = st.evaluations.clone();
-        st.set_method(Method::ShortII);
-        assert_eq!(st.method, Method::ShortII);
+        st.set_method(Method::sortII);
+        assert_eq!(st.method, Method::sortII);
         st.set_method(Method::Classic);
         assert_eq!(st.evaluations, classic);
     }
@@ -1320,9 +1320,9 @@ mod tests {
     // AHPSort II
     // ---------------------------------------------------------------------------------------
 
-    fn short_blank() -> AppState {
+    fn sort_blank() -> AppState {
         let mut st = AppState::new();
-        st.set_method(Method::ShortII);
+        st.set_method(Method::sortII);
         st.new_problem();
         st
     }
@@ -1344,7 +1344,7 @@ mod tests {
 
     #[test]
     fn range_follows_the_values_until_it_is_edited_by_hand() {
-        let mut st = short_blank();
+        let mut st = sort_blank();
         assert_eq!(st.project.effective_range(0), 0.0);
         assert!(!st.range_is_manual(0));
 
@@ -1379,7 +1379,7 @@ mod tests {
 
     #[test]
     fn profiles_follow_criteria_and_categories() {
-        let mut st = short_blank();
+        let mut st = sort_blank();
         let shape = |st: &AppState| -> Vec<usize> {
             st.project
                 .criteria
@@ -1438,7 +1438,7 @@ mod tests {
 
     #[test]
     fn invalid_profile_cells_move_with_their_category() {
-        let mut st = short_blank();
+        let mut st = sort_blank();
         assert!(!st.set_profile(1, 2, "x"));
         assert!(st.advance().is_err());
         assert!(st.data_errors.contains("Categoría 3"), "{}", st.data_errors);
@@ -1454,7 +1454,7 @@ mod tests {
     #[test]
     fn point_order_matches_the_library_questionnaires() {
         let st = loaded("londres.ahp");
-        let (_, per_criterion) = ahp::short_quizzes(&st.project).unwrap();
+        let (_, per_criterion) = ahp::sort_quizzes(&st.project).unwrap();
         let names = &st.categories().unwrap().names;
         for (c, (_, quiz)) in per_criterion.iter().enumerate() {
             let ours: Vec<String> = range_point_order(&st.project, c)
@@ -1500,7 +1500,7 @@ mod tests {
     #[test]
     fn londres_jumps_to_the_classification() {
         let mut st = loaded("londres.ahp");
-        assert_eq!(st.method, Method::ShortII);
+        assert_eq!(st.method, Method::sortII);
         assert!(st.can_jump_to_result);
         // A range present in the file means "set by hand".
         assert!((0..5).all(|c| st.range_is_manual(c)));
@@ -1510,7 +1510,7 @@ mod tests {
         assert_eq!(st.screen.index(), 5);
         assert_eq!(st.max_reached, Screen::Classification);
         let names = &st.categories().unwrap().names;
-        let outcome = st.short_outcome().unwrap();
+        let outcome = st.sort_outcome().unwrap();
         assert_eq!(outcome.classification.len(), 6);
         assert!(
             outcome
@@ -1529,7 +1529,7 @@ mod tests {
         assert_eq!(st.screen, Screen::Matrices);
         assert!(st.navigate(Screen::Ranking).is_err());
         assert_eq!(
-            Screen::from_index(4, Method::ShortII),
+            Screen::from_index(4, Method::sortII),
             Some(Screen::Priorities)
         );
         assert_eq!(
@@ -1551,7 +1551,7 @@ mod tests {
         assert_eq!(st.evaluations.per_criterion[0][0], 5.0);
         st.skip_quiz().unwrap();
         assert_eq!(st.screen, Screen::Matrices);
-        let outcome = st.short_outcome().unwrap();
+        let outcome = st.sort_outcome().unwrap();
         assert_eq!(outcome.ranges.len(), 5);
         assert_eq!(outcome.ranges[0].1.labels.len(), 9);
         assert!(st.navigate(Screen::Priorities).is_err());
@@ -1564,21 +1564,21 @@ mod tests {
     fn range_matrix_edit_changes_weights_and_classification_inputs() {
         let mut st = loaded("londres.ahp");
         st.jump_to_result().unwrap();
-        let before = st.short_outcome().unwrap().clone();
+        let before = st.sort_outcome().unwrap().clone();
 
         // Range matrix of "Crímenes" (card 1): RP6 (row 0) vs RP1 (column 8).
         st.edit_matrix(1, 0, 8, "5").unwrap();
         assert_eq!(st.evaluations.per_criterion[0][pair_index(9, 0, 8)], 5.0);
-        let after = st.short_outcome().unwrap();
+        let after = st.sort_outcome().unwrap();
         assert_ne!(
             after.ranges[0].1.report.weights,
             before.ranges[0].1.report.weights
         );
         assert_ne!(after.local_priorities[0], before.local_priorities[0]);
         let globals =
-            |o: &ShortOutcome| -> Vec<f64> { o.alternatives.iter().map(|a| a.2).collect() };
+            |o: &sortOutcome| -> Vec<f64> { o.alternatives.iter().map(|a| a.2).collect() };
         assert_ne!(globals(after), globals(&before));
-        let profiles = |o: &ShortOutcome| -> Vec<f64> { o.profiles.iter().map(|p| p.2).collect() };
+        let profiles = |o: &sortOutcome| -> Vec<f64> { o.profiles.iter().map(|p| p.2).collect() };
         assert_ne!(profiles(after), profiles(&before));
         // Other criteria are untouched.
         assert_eq!(after.local_priorities[1], before.local_priorities[1]);
@@ -1620,7 +1620,7 @@ mod tests {
     #[test]
     fn switching_a_classic_problem_to_ahpsort_creates_categories() {
         let mut st = loaded("coches.ahp");
-        st.set_method(Method::ShortII);
+        st.set_method(Method::sortII);
         let cats = st.categories().unwrap();
         assert_eq!(cats.profile_type, ProfileType::Central);
         assert_eq!(cats.names.len(), 3);
@@ -1660,7 +1660,7 @@ mod tests {
         assert!(st.reshape_if_needed());
         assert_eq!(
             st.evaluations.per_criterion[0],
-            Evaluations::defaults(&st.project, Method::ShortII).per_criterion[0]
+            Evaluations::defaults(&st.project, Method::sortII).per_criterion[0]
         );
     }
 
@@ -1687,7 +1687,7 @@ mod tests {
             assert_eq!(st.screen, Screen::Data);
             assert!(!st.data_errors.is_empty(), "name {bad:?}");
             assert!(st.advance().is_err(), "name {bad:?}");
-            assert!(st.short_outcome().is_none());
+            assert!(st.sort_outcome().is_none());
 
             st.rename_category(0, "Alto");
             assert!(st.jump_to_result().is_ok(), "name {bad:?}");

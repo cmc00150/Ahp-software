@@ -19,7 +19,7 @@ use serde::{
 
 use crate::{
     ahp_classic::ahp::Ahp,
-    ahp_shortII::{ahp_shortII::AhpShort, profile::Profile},
+    ahp_sortII::{ahp_sortII::Ahpsort, profile::Profile},
     share::{
         pesos::{WeightMethod, WeightsReport},
         quiz::{QuizPairMatrix, signed_to_ratio},
@@ -46,15 +46,15 @@ type PriorityRows<'a> = Vec<(&'a str, Vec<(&'a str, f64)>, f64)>;
 pub enum Method {
     #[serde(rename = "classic")]
     Classic,
-    #[serde(rename = "shortII")]
-    ShortII,
+    #[serde(rename = "sortII")]
+    sortII,
 }
 
 impl fmt::Display for Method {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             Method::Classic => "classic",
-            Method::ShortII => "shortII",
+            Method::sortII => "sortII",
         })
     }
 }
@@ -292,7 +292,7 @@ impl Project {
     pub fn validate(&self, method: Method) -> Result<(), ProjectError> {
         match method {
             Method::Classic => self.validate_classic(),
-            Method::ShortII => self.validate_short(),
+            Method::sortII => self.validate_sort(),
         }
     }
 
@@ -303,7 +303,7 @@ impl Project {
     }
 
     /// Checks the project can be solved with AHPSort II.
-    pub fn validate_short(&self) -> Result<(), ProjectError> {
+    pub fn validate_sort(&self) -> Result<(), ProjectError> {
         self.validate_common(1)?;
         let cats = self
             .categories
@@ -337,7 +337,7 @@ impl Project {
                 )));
             }
         }
-        self.validate_evaluations(Method::ShortII)
+        self.validate_evaluations(Method::sortII)
     }
 
     fn validate_common(&self, min_alternatives: usize) -> Result<(), ProjectError> {
@@ -385,7 +385,7 @@ impl Project {
         }
         let map = match method {
             Method::Classic => &ev.alternatives,
-            Method::ShortII => &ev.ranges,
+            Method::sortII => &ev.ranges,
         };
         for (name, len) in names.iter().zip(per_criterion_len) {
             check_signed(&format!("evaluations para \"{name}\""), map.get(name), len)?;
@@ -401,7 +401,7 @@ impl Project {
             .iter()
             .map(|c| match method {
                 Method::Classic => pairs(self.alternatives.len()),
-                Method::ShortII => pairs(RANGE_POINTS + c.profiles.len()),
+                Method::sortII => pairs(RANGE_POINTS + c.profiles.len()),
             })
             .collect();
         (pairs(self.criteria.len()), per_criterion)
@@ -423,8 +423,8 @@ impl Project {
         )?)
     }
 
-    fn build_short(&self) -> Result<AhpShort, ProjectError> {
-        self.validate_short()?;
+    fn build_sort(&self) -> Result<Ahpsort, ProjectError> {
+        self.validate_sort()?;
         let cats = self.categories.as_ref().expect("validated");
         let profiles = (0..self.expected_profiles().unwrap_or(0))
             .map(|k| {
@@ -445,7 +445,7 @@ impl Project {
         let ranges = (0..self.criteria.len())
             .map(|i| self.effective_range(i))
             .collect();
-        Ok(AhpShort::new(
+        Ok(Ahpsort::new(
             self.criteria_names(),
             self.alternatives.clone(),
             self.table(),
@@ -496,17 +496,17 @@ pub fn classic_quizzes(project: &Project) -> Result<QuizSet, ProjectError> {
 }
 
 /// Criteria quiz and one range-points quiz per criterion (AHPSort II), exactly as
-/// [`AhpShort::evaluate_ranges`] produces them (labels, reference values and order).
-pub fn short_quizzes(project: &Project) -> Result<QuizSet, ProjectError> {
-    let mut ahp = project.build_short()?;
+/// [`Ahpsort::evaluate_ranges`] produces them (labels, reference values and order).
+pub fn sort_quizzes(project: &Project) -> Result<QuizSet, ProjectError> {
+    let mut ahp = project.build_sort()?;
     Ok((ahp.evaluate_criteria(), ahp.evaluate_ranges()))
 }
 
-/// Quizzes for `method` (see [`classic_quizzes`] and [`short_quizzes`]).
+/// Quizzes for `method` (see [`classic_quizzes`] and [`sort_quizzes`]).
 pub fn quizzes(project: &Project, method: Method) -> Result<QuizSet, ProjectError> {
     match method {
         Method::Classic => classic_quizzes(project),
-        Method::ShortII => short_quizzes(project),
+        Method::sortII => sort_quizzes(project),
     }
 }
 
@@ -558,7 +558,7 @@ impl Evaluations {
         let file = &project.evaluations;
         let map = match method {
             Method::Classic => &file.alternatives,
-            Method::ShortII => &file.ranges,
+            Method::sortII => &file.ranges,
         };
 
         let criteria_missing = match &file.criteria {
@@ -604,7 +604,7 @@ impl Evaluations {
         project.evaluations.criteria = Some(self.criteria.clone());
         match method {
             Method::Classic => project.evaluations.alternatives = named,
-            Method::ShortII => project.evaluations.ranges = named,
+            Method::sortII => project.evaluations.ranges = named,
         }
     }
 }
@@ -641,7 +641,7 @@ pub struct RangePoint {
 }
 
 #[derive(Debug, Clone)]
-pub struct ShortOutcome {
+pub struct sortOutcome {
     pub criteria: MatrixView,
     /// One range-points matrix per criterion: `(criterion, matrix)`.
     pub ranges: Vec<(String, MatrixView)>,
@@ -656,10 +656,7 @@ pub struct ShortOutcome {
 }
 
 /// Quiz with the signed values applied (rounded) and the upper cells for the exact matrix.
-fn signed_quiz(
-    mut quiz: QuizPairMatrix,
-    signed: &[f64],
-) -> Result<(QuizPairMatrix, UpperCells), ProjectError> {
+fn signed_quiz(quiz: &mut QuizPairMatrix, signed: &[f64]) -> Result<UpperCells, ProjectError> {
     quiz.apply_signed(signed)?;
     let n = quiz.num_var();
     let cells = (0..n)
@@ -667,7 +664,7 @@ fn signed_quiz(
         .zip(signed)
         .map(|((i, j), &x)| (i, j, signed_to_ratio(x)))
         .collect();
-    Ok((quiz, cells))
+    Ok(cells)
 }
 
 fn matrix_view(
@@ -722,12 +719,12 @@ fn check_evaluations(
 /// Solves a classic AHP project with the exact signed evaluations.
 pub fn solve_classic(project: &Project, ev: &Evaluations) -> Result<ClassicOutcome, ProjectError> {
     let mut ahp = project.build_classic()?;
-    let c_quiz = ahp.evaluate_criteria();
+    let mut c_quiz = ahp.evaluate_criteria();
     let a_quizzes = ahp.evaluate_alternatives();
     check_evaluations(ev, &c_quiz, &a_quizzes)?;
 
     let c_labels = c_quiz.labels();
-    let (c_quiz, c_cells) = signed_quiz(c_quiz, &ev.criteria)?;
+    let c_cells = signed_quiz(&mut c_quiz, &ev.criteria)?;
     ahp.submit_criteria(c_quiz)?;
     for (i, j, r) in c_cells {
         ahp.set_matrix_criterion_value(i, j, r)?;
@@ -735,8 +732,8 @@ pub fn solve_classic(project: &Project, ev: &Evaluations) -> Result<ClassicOutco
 
     let mut quizzes = Vec::new();
     let mut cells = Vec::new();
-    for ((_, q), v) in a_quizzes.into_iter().zip(&ev.per_criterion) {
-        let (q, c) = signed_quiz(q, v)?;
+    for ((_, mut q), v) in a_quizzes.into_iter().zip(&ev.per_criterion) {
+        let c = signed_quiz(&mut q, v)?;
         quizzes.push(q);
         cells.push(c);
     }
@@ -777,14 +774,14 @@ pub fn solve_classic(project: &Project, ev: &Evaluations) -> Result<ClassicOutco
 }
 
 /// Solves an AHPSort II project with the exact signed evaluations.
-pub fn solve_short(project: &Project, ev: &Evaluations) -> Result<ShortOutcome, ProjectError> {
-    let mut ahp = project.build_short()?;
-    let c_quiz = ahp.evaluate_criteria();
+pub fn solve_sort(project: &Project, ev: &Evaluations) -> Result<sortOutcome, ProjectError> {
+    let mut ahp = project.build_sort()?;
+    let mut c_quiz = ahp.evaluate_criteria();
     let r_quizzes = ahp.evaluate_ranges();
     check_evaluations(ev, &c_quiz, &r_quizzes)?;
 
     let c_labels = c_quiz.labels();
-    let (c_quiz, c_cells) = signed_quiz(c_quiz, &ev.criteria)?;
+    let c_cells = signed_quiz(&mut c_quiz, &ev.criteria)?;
     ahp.submit_criteria(c_quiz)?;
     for (i, j, r) in c_cells {
         ahp.set_matrix_criterion_value(i, j, r)?;
@@ -793,9 +790,9 @@ pub fn solve_short(project: &Project, ev: &Evaluations) -> Result<ShortOutcome, 
     let mut r_labels = Vec::new();
     let mut quizzes = Vec::new();
     let mut cells = Vec::new();
-    for ((name, q), v) in r_quizzes.into_iter().zip(&ev.per_criterion) {
+    for ((name, mut q), v) in r_quizzes.into_iter().zip(&ev.per_criterion) {
         r_labels.push((name, q.labels()));
-        let (q, c) = signed_quiz(q, v)?;
+        let c = signed_quiz(&mut q, v)?;
         quizzes.push(q);
         cells.push(c);
     }
@@ -817,11 +814,11 @@ pub fn solve_short(project: &Project, ev: &Evaluations) -> Result<ShortOutcome, 
         .enumerate()
         .map(|(k, (name, labels))| {
             matrix_view(
-                labels.clone(),
+                labels.to_owned(),
                 |i, j| ahp.get_matrix_range_value(k, i, j),
                 ahp.ranges_weights(k, METHOD),
             )
-            .map(|m| (name.clone(), m))
+            .map(|m| (name.to_owned(), m))
         })
         .collect::<Result<Vec<_>, _>>()?;
 
@@ -863,7 +860,7 @@ pub fn solve_short(project: &Project, ev: &Evaluations) -> Result<ShortOutcome, 
     let profiles = owned(ahp.profiles_global_priorities()?);
     let classification = ahp.classify()?;
 
-    Ok(ShortOutcome {
+    Ok(sortOutcome {
         criteria,
         ranges,
         local_priorities,

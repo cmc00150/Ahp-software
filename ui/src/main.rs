@@ -121,7 +121,7 @@ fn wire_navigation(ui: &AppWindow, state: &Shared) {
         st.set_method(if classic {
             Method::Classic
         } else {
-            Method::ShortII
+            Method::sortII
         });
         models::refresh(&ui, st);
     }));
@@ -189,7 +189,7 @@ fn wire_data(ui: &AppWindow, state: &Shared) {
         |ui, st, a: i32, c: i32, text: slint::SharedString| {
             st.set_value(a as usize, c as usize, &text);
             models::update_data_cell(&ui, st, a as usize, c as usize);
-            if st.method == Method::ShortII {
+            if st.method == Method::sortII {
                 // An automatic range follows the maximum of the values.
                 models::update_range(&ui, st, c as usize, None);
             }
@@ -300,7 +300,7 @@ fn wire_matrices(ui: &AppWindow, state: &Shared) {
                 Ok(()) => {
                     models::show_message(&ui, "", false);
                     models::update_matrix(&ui, st, card);
-                    if st.method == Method::ShortII {
+                    if st.method == Method::sortII {
                         models::refresh_local(&ui, st);
                     }
                 }

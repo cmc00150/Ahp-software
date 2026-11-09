@@ -8,7 +8,7 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use ahp::{Evaluations, Method, Project, quizzes, solve_classic, solve_short};
+use ahp::{Evaluations, Method, Project, quizzes, solve_classic, solve_sort};
 use clap::{ArgAction, Args, Parser, Subcommand};
 
 use questionnaire::Prompter;
@@ -52,13 +52,13 @@ enum Command {
     Classic(RunArgs),
     /// Resuelve el proyecto con AHPSort II y muestra la clasificación de alternativas
     #[command(
-        name = "shortII",
-        alias = "short-ii",
+        name = "sortII",
+        alias = "sort-ii",
         help_template = HELP_TEMPLATE,
         next_help_heading = "Opciones",
-        override_usage = "ahp shortII [OPCIONES] <FICHERO>"
+        override_usage = "ahp sortII [OPCIONES] <FICHERO>"
     )]
-    ShortII(RunArgs),
+    sortII(RunArgs),
 }
 
 #[derive(Args, Debug)]
@@ -79,7 +79,7 @@ struct RunArgs {
 fn criterion_header(method: Method, name: &str, unit: &str) -> String {
     let what = match method {
         Method::Classic => "comparación de alternativas",
-        Method::ShortII => "comparación de puntos de referencia",
+        Method::sortII => "comparación de puntos de referencia",
     };
     if unit.trim().is_empty() {
         format!("Criterio «{name}»: {what}")
@@ -139,9 +139,9 @@ fn run(method: Method, args: RunArgs) -> Result<String, String> {
             let outcome = solve_classic(&project, &ev).map_err(|e| e.to_string())?;
             report::classic(&project, &outcome, verbose)
         }
-        Method::ShortII => {
-            let outcome = solve_short(&project, &ev).map_err(|e| e.to_string())?;
-            report::short(&project, &outcome, verbose)
+        Method::sortII => {
+            let outcome = solve_sort(&project, &ev).map_err(|e| e.to_string())?;
+            report::sort(&project, &outcome, verbose)
         }
     };
     // Save only after the solver accepted the project, so a rejected state is never written.
@@ -155,7 +155,7 @@ fn main() -> ExitCode {
     let cli = Cli::parse();
     let (method, args) = match cli.command {
         Command::Classic(args) => (Method::Classic, args),
-        Command::ShortII(args) => (Method::ShortII, args),
+        Command::sortII(args) => (Method::sortII, args),
     };
     match run(method, args) {
         Ok(text) => {

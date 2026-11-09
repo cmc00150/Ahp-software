@@ -37,14 +37,14 @@ pub fn refresh(ui: &AppWindow, st: &AppState) {
         Screen::Start => {}
         Screen::Data => {
             refresh_data(ui, st);
-            if st.method == Method::ShortII {
+            if st.method == Method::sortII {
                 refresh_profiles(ui, st);
             }
         }
         Screen::Quiz => refresh_quiz(ui, st),
         Screen::Matrices => {
             refresh_matrices(ui, st);
-            if st.method == Method::ShortII {
+            if st.method == Method::sortII {
                 refresh_local(ui, st);
             }
         }
@@ -296,7 +296,7 @@ fn matrix_views(st: &AppState) -> Vec<(String, String, &MatrixView)> {
                 o.alternatives.iter().map(|(_, v)| v).collect(),
                 |name| format!("Alternativas según «{name}»"),
             )
-        } else if let Some(o) = st.short_outcome() {
+        } else if let Some(o) = st.sort_outcome() {
             (
                 &o.criteria,
                 o.ranges.iter().map(|(_, v)| v).collect(),
@@ -552,7 +552,7 @@ pub fn update_category_name(ui: &AppWindow, st: &AppState) {
 // AHPSort II: local priorities (matrices screen)
 // ---------------------------------------------------------------------------------------------
 
-/// Short label of profile `k`: `CP1`, `CP2`... (central) or `LP1`... (limiting).
+/// sort label of profile `k`: `CP1`, `CP2`... (central) or `LP1`... (limiting).
 fn profile_label(st: &AppState, k: usize) -> String {
     match profile_type(st) {
         ProfileType::Central => format!("CP{}", k + 1),
@@ -574,7 +574,7 @@ fn ticks(ticks: Vec<Tick>) -> ModelRc<ChartTick> {
 
 /// One table per criterion (points ascending by value) with its chart.
 pub fn local_tables(st: &AppState) -> Vec<LocalTable> {
-    let Some(outcome) = st.short_outcome() else {
+    let Some(outcome) = st.sort_outcome() else {
         return Vec::new();
     };
     outcome
@@ -652,7 +652,7 @@ fn result_rows(rows: &[(String, Vec<f64>, f64)]) -> Vec<ResultRow> {
 pub fn refresh_priorities(ui: &AppWindow, st: &AppState) {
     let store = ui.global::<PrioritiesStore>();
     let (alternatives, profiles) = st
-        .short_outcome()
+        .sort_outcome()
         .map(|o| (result_rows(&o.alternatives), result_rows(&o.profiles)))
         .unwrap_or_default();
     store.set_criteria(strings(st.project.criteria_names()));
@@ -663,7 +663,7 @@ pub fn refresh_priorities(ui: &AppWindow, st: &AppState) {
 /// One row per alternative: its global priority, the global priority of the profile of its
 /// category (`—` when that category has no profile) and the category.
 pub fn classification_rows(st: &AppState) -> Vec<ClassRow> {
-    let Some(outcome) = st.short_outcome() else {
+    let Some(outcome) = st.sort_outcome() else {
         return Vec::new();
     };
     let names = st
@@ -789,7 +789,7 @@ mod tests {
         assert_eq!(westminster.profile_global, "—");
         assert_eq!(westminster.category_index, 2);
         // Rows of categories with a profile show that profile's global priority.
-        let profiles = &st.short_outcome().unwrap().profiles;
+        let profiles = &st.sort_outcome().unwrap().profiles;
         for row in rows.iter().filter(|r| r.category != "Bajo") {
             let (_, _, g) = profiles.iter().find(|p| row.category == p.0).unwrap();
             assert_eq!(row.profile_global, fmt_weight(*g));
@@ -822,7 +822,7 @@ mod tests {
     fn priorities_tables_have_one_column_per_criterion() {
         let mut st = loaded("londres.ahp");
         st.jump_to_result().unwrap();
-        let o = st.short_outcome().unwrap();
+        let o = st.sort_outcome().unwrap();
         let alternatives = result_rows(&o.alternatives);
         assert_eq!(alternatives.len(), 6);
         assert!(alternatives.iter().all(|r| r.cells.row_count() == 5));

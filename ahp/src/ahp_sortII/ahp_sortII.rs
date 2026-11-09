@@ -1,5 +1,5 @@
 use crate::{
-    ahp_shortII::profile::Profile,
+    ahp_sortII::profile::Profile,
     share::{
         pair_matrix::PairMatrix,
         pesos::{WeightMethod, WeightsReport},
@@ -15,7 +15,7 @@ pub struct Priorities {
     pub profile: Option<usize>,
 }
 
-pub struct AhpShort {
+pub struct Ahpsort {
     criteria_labels: Vec<String>,
     alternatives_labels: Vec<String>,
     categories: Vec<(String, Option<Profile>)>,
@@ -28,7 +28,7 @@ pub struct AhpShort {
     ranges_priorities: Option<Vec<Vec<Priorities>>>, // valor original, peso
 }
 
-impl AhpShort {
+impl Ahpsort {
     pub fn new(
         c_labels: Vec<impl ToString>,
         alt_labels: Vec<impl ToString>,
@@ -42,15 +42,15 @@ impl AhpShort {
             || values.iter().any(|(_, row)| row.len() != alt_labels.len())
         {
             Err(
-                "[AhpShort::new] La cardinalidad de la matriz de valores no coincide con los vectores de nombes, asegurate de que los criterios son las filas y las alternativas las columnas.",
+                "[Ahpsort::new] La cardinalidad de la matriz de valores no coincide con los vectores de nombes, asegurate de que los criterios son las filas y las alternativas las columnas.",
             )
         } else if profiles.len() != category_labels.len()
             && profiles.len() + 1 != category_labels.len()
         {
             // Central: one profile per category. Limiting: the last category has no profile.
-            Err("[AhpShort::new] Faltan o sobran perfiles con respecto a las categorías.")
+            Err("[Ahpsort::new] Faltan o sobran perfiles con respecto a las categorías.")
         } else if ranges.len() != c_labels.len() {
-            Err("[AhpShort::new] Faltan o sobran rangos de los criterios.")
+            Err("[Ahpsort::new] Faltan o sobran rangos de los criterios.")
         } else {
             Ok(Self {
                 criteria_labels: c_labels.into_iter().map(|l| l.to_string()).collect(),
@@ -86,7 +86,7 @@ impl AhpShort {
         &self.values
     }
 
-    /// Category names, in the order given to [`AhpShort::new`].
+    /// Category names, in the order given to [`Ahpsort::new`].
     pub fn category_labels(&self) -> Vec<&str> {
         self.categories.iter().map(|(l, _)| l.as_str()).collect()
     }
@@ -148,7 +148,7 @@ impl AhpShort {
     pub fn submit_criteria(&mut self, quiz: QuizPairMatrix) -> Result<(), &'static str> {
         if quiz.num_var() != self.criteria_labels.len() {
             Err(
-                "[AhpShort::sumbit_criteria] El cuestionario proporcionado no evalua el mismo número de criterios que el sistema.",
+                "[Ahpsort::sumbit_criteria] El cuestionario proporcionado no evalua el mismo número de criterios que el sistema.",
             )
         } else {
             self.criteria_matrix = Some(PairMatrix::from_quiz(quiz));
@@ -159,13 +159,13 @@ impl AhpShort {
     pub fn submit_ranges(&mut self, quizs: Vec<QuizPairMatrix>) -> Result<(), &'static str> {
         if quizs.len() != self.criteria_labels.len() {
             return Err(
-                "[AhpShort::submit_ranges] El número de cuestionarios no coincide con el de criterios.",
+                "[Ahpsort::submit_ranges] El número de cuestionarios no coincide con el de criterios.",
             );
         }
         let priorities = self
             .ranges_priorities
             .as_mut()
-            .ok_or("[AhpShort::submit_ranges] Primero hay que llamar a evaluate_ranges.")?;
+            .ok_or("[Ahpsort::submit_ranges] Primero hay que llamar a evaluate_ranges.")?;
 
         // Cada cuestionario debe tener tantas variables como prioridades generó evaluate_ranges
         if quizs
@@ -174,7 +174,7 @@ impl AhpShort {
             .any(|(q, p)| q.num_var() != p.len())
         {
             return Err(
-                "[AhpShort::submit_ranges] Algún cuestionario no evalúa el mismo número de rangos y perfiles que el sistema.",
+                "[Ahpsort::submit_ranges] Algún cuestionario no evalúa el mismo número de rangos y perfiles que el sistema.",
             );
         }
 
@@ -204,7 +204,7 @@ impl AhpShort {
         self.criteria_matrix
             .as_mut()
             .ok_or(
-                "[AhpShort::set_matrix_criterion_value] La matriz de criterios todavía no existe",
+                "[Ahpsort::set_matrix_criterion_value] La matriz de criterios todavía no existe",
             )?
             .set(row, col, value)
     }
@@ -230,9 +230,9 @@ impl AhpShort {
         let matrix = self
             .ranges_matrix
             .as_mut()
-            .ok_or("[AhpShort::set_matrix_range_value] Las matrices de rangos todavía no existen")?
+            .ok_or("[Ahpsort::set_matrix_range_value] Las matrices de rangos todavía no existen")?
             .get_mut(criterion_idx)
-            .ok_or("[AhpShort::set_matrix_range_value] El criterio no existe")?;
+            .ok_or("[Ahpsort::set_matrix_range_value] El criterio no existe")?;
         matrix.set(row, col, value)?;
 
         // Keep the range priorities in sync with the edited matrix
@@ -291,11 +291,11 @@ impl AhpShort {
     pub fn profiles_global_priorities(
         &self,
     ) -> Result<Vec<(&str, Vec<(&str, f64)>, f64)>, &'static str> {
-        const MISSING: &str = "[AhpShort::profiles_global_priorities] Faltan las prioridades de rangos, envía antes los cuestionarios de rangos.";
+        const MISSING: &str = "[Ahpsort::profiles_global_priorities] Faltan las prioridades de rangos, envía antes los cuestionarios de rangos.";
 
         let c_weights = self
             .criteria_weights(WeightMethod::EigenValues)
-            .ok_or("[AhpShort::profiles_global_priorities] Falta la matriz de criterios.")?
+            .ok_or("[Ahpsort::profiles_global_priorities] Falta la matriz de criterios.")?
             .weights;
         let priorities = self.ranges_priorities.as_ref().ok_or(MISSING)?;
 
@@ -350,11 +350,11 @@ impl AhpShort {
     pub fn alternatives_global_priorities(
         &self,
     ) -> Result<Vec<(&str, Vec<(&str, f64)>, f64)>, &'static str> {
-        const MISSING: &str = "[AhpShort::alternatives_global_priorities] Faltan las prioridades de rangos, envía antes los cuestionarios de rangos.";
+        const MISSING: &str = "[Ahpsort::alternatives_global_priorities] Faltan las prioridades de rangos, envía antes los cuestionarios de rangos.";
 
         let c_weights = self
             .criteria_weights(WeightMethod::EigenValues)
-            .ok_or("[AhpShort::alternatives_global_priorities] Falta la matriz de criterios.")?
+            .ok_or("[Ahpsort::alternatives_global_priorities] Falta la matriz de criterios.")?
             .weights;
         let priorities = self.ranges_priorities.as_ref().ok_or(MISSING)?;
 
@@ -511,8 +511,8 @@ fn interpolate(points: &[(f64, f64)], v: f64) -> f64 {
 
 #[cfg(test)]
 mod constructor_tests {
-    use super::AhpShort;
-    use crate::ahp_shortII::profile::Profile;
+    use super::Ahpsort;
+    use crate::ahp_sortII::profile::Profile;
     use crate::share::{
         pesos::WeightMethod,
         share::{Table, Value},
@@ -544,7 +544,7 @@ mod constructor_tests {
     #[test]
     fn new_validates_criteria_rows_and_alternative_columns() {
         // 1 criterion x 2 alternatives: rejected before the fix
-        let ok = AhpShort::new(
+        let ok = Ahpsort::new(
             vec!["c"],
             vec!["a1", "a2"],
             table(),
@@ -558,7 +558,7 @@ mod constructor_tests {
         assert_eq!(ok.ranges(), &[50.0]);
         assert_eq!(ok.values().len(), 1);
 
-        let empty = AhpShort::new(
+        let empty = Ahpsort::new(
             vec!["c"],
             vec!["a1"],
             Vec::new(),
@@ -577,7 +577,7 @@ mod constructor_tests {
                 .collect()
         };
         let build = |profiles| {
-            AhpShort::new(
+            Ahpsort::new(
                 vec!["c"],
                 vec!["a1", "a2"],
                 table(),
@@ -597,7 +597,7 @@ mod constructor_tests {
 
     #[test]
     fn category_k_gets_profile_k() {
-        let mut ahp = AhpShort::new(
+        let mut ahp = Ahpsort::new(
             vec!["c"],
             vec!["a1", "a2"],
             table(),
@@ -621,7 +621,7 @@ mod constructor_tests {
 
     #[test]
     fn set_matrix_range_value_refreshes_range_priorities() {
-        let mut ahp = AhpShort::new(
+        let mut ahp = Ahpsort::new(
             vec!["c"],
             vec!["a1", "a2"],
             table(),

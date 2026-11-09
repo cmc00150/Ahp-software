@@ -11,7 +11,7 @@ fn assert_close(a: f64, b: f64, tol: f64) {
 
 /// Range evaluations where a lower value is preferred (as in the London example).
 fn lower_is_better(project: &Project) -> Vec<Vec<f64>> {
-    let (_, quizzes) = short_quizzes(project).unwrap();
+    let (_, quizzes) = sort_quizzes(project).unwrap();
     quizzes
         .iter()
         .enumerate()
@@ -120,12 +120,12 @@ fn solve_uses_the_exact_signed_values() {
 }
 
 #[test]
-fn solves_the_short_example_with_a_mix_of_categories() {
+fn solves_the_sort_example_with_a_mix_of_categories() {
     let p = example("londres.ahp");
-    let (ev, missing) = Evaluations::from_project(&p, Method::ShortII).unwrap();
+    let (ev, missing) = Evaluations::from_project(&p, Method::sortII).unwrap();
     assert!(missing.is_complete());
 
-    let out = solve_short(&p, &ev).unwrap();
+    let out = solve_sort(&p, &ev).unwrap();
     let names = &p.categories.as_ref().unwrap().names;
     assert_eq!(out.classification.len(), p.alternatives.len());
     assert!(out.classification.iter().all(|(_, _, c)| names.contains(c)));
@@ -165,8 +165,8 @@ fn solves_the_short_example_with_a_mix_of_categories() {
 #[test]
 fn quiz_sizes_match_the_library_quizzes() {
     let p = example("londres.ahp");
-    let (c, r) = short_quizzes(&p).unwrap();
-    let (cs, rs) = p.quiz_sizes(Method::ShortII);
+    let (c, r) = sort_quizzes(&p).unwrap();
+    let (cs, rs) = p.quiz_sizes(Method::sortII);
     assert_eq!(c.scores().len(), cs);
     assert_eq!(
         r.iter().map(|(_, q)| q.scores().len()).collect::<Vec<_>>(),
@@ -194,7 +194,7 @@ fn detects_missing_parts_of_partial_files() {
     );
 
     let p = example("londres_parcial.ahp");
-    let (ev, missing) = Evaluations::from_project(&p, Method::ShortII).unwrap();
+    let (ev, missing) = Evaluations::from_project(&p, Method::sortII).unwrap();
     assert!(!missing.criteria);
     assert_eq!(missing.per_criterion, vec![true; 5]);
     assert_eq!(&ev.criteria, p.evaluations.criteria.as_ref().unwrap());
@@ -204,12 +204,12 @@ fn detects_missing_parts_of_partial_files() {
 #[test]
 fn stored_evaluations_reload_complete() {
     let mut p = example("londres_parcial.ahp");
-    let (mut ev, _) = Evaluations::from_project(&p, Method::ShortII).unwrap();
+    let (mut ev, _) = Evaluations::from_project(&p, Method::sortII).unwrap();
     ev.per_criterion = lower_is_better(&p);
-    ev.store_into(&mut p, Method::ShortII);
+    ev.store_into(&mut p, Method::sortII);
 
     let reloaded = Project::from_toml_str(&p.to_toml_string().unwrap()).unwrap();
-    let (again, missing) = Evaluations::from_project(&reloaded, Method::ShortII).unwrap();
+    let (again, missing) = Evaluations::from_project(&reloaded, Method::sortII).unwrap();
     assert!(missing.is_complete());
     assert_eq!(again, ev);
     // Keyed by criterion name, in criterion order
@@ -222,10 +222,10 @@ fn stored_evaluations_reload_complete() {
         .collect();
     assert_eq!(keys, p.criteria_names());
     // Same results as the shipped complete example
-    assert_eq!(solve_short(&reloaded, &again).unwrap().classification, {
+    assert_eq!(solve_sort(&reloaded, &again).unwrap().classification, {
         let full = example("londres.ahp");
-        let (ev, _) = Evaluations::from_project(&full, Method::ShortII).unwrap();
-        solve_short(&full, &ev).unwrap().classification
+        let (ev, _) = Evaluations::from_project(&full, Method::sortII).unwrap();
+        solve_sort(&full, &ev).unwrap().classification
     });
 }
 
@@ -251,9 +251,9 @@ fn limiting_profiles_use_the_last_category_as_catch_all() {
         names = ["A", "B", "C"]
     "#;
     let p = Project::from_toml_str(text).unwrap();
-    let (mut ev, _) = Evaluations::from_project(&p, Method::ShortII).unwrap();
+    let (mut ev, _) = Evaluations::from_project(&p, Method::sortII).unwrap();
     ev.per_criterion = lower_is_better(&p);
-    let out = solve_short(&p, &ev).unwrap();
+    let out = solve_sort(&p, &ev).unwrap();
 
     assert_eq!(out.profiles.len(), 2, "the last category has no profile");
     let class = |alt: &str| {
@@ -290,35 +290,35 @@ fn validation_rejects_inconsistent_projects() {
 
     let mut p = base.clone();
     p.criteria[0].values.pop();
-    expect_invalid(&p, Method::ShortII, "valores");
+    expect_invalid(&p, Method::sortII, "valores");
 
     let mut p = base.clone();
     p.alternatives[1] = p.alternatives[0].clone();
-    expect_invalid(&p, Method::ShortII, "repetida");
+    expect_invalid(&p, Method::sortII, "repetida");
 
     let mut p = base.clone();
     p.criteria[2].profiles.pop();
-    expect_invalid(&p, Method::ShortII, "perfiles");
+    expect_invalid(&p, Method::sortII, "perfiles");
 
     let mut p = base.clone();
     p.categories.as_mut().unwrap().profile_type = ProfileType::Limiting;
-    expect_invalid(&p, Method::ShortII, "perfiles");
+    expect_invalid(&p, Method::sortII, "perfiles");
 
     let mut p = base.clone();
     p.categories = None;
-    expect_invalid(&p, Method::ShortII, "categories");
+    expect_invalid(&p, Method::sortII, "categories");
 
     let mut p = base.clone();
     p.evaluations.ranges.0[0].1.pop();
-    expect_invalid(&p, Method::ShortII, "debe tener");
+    expect_invalid(&p, Method::sortII, "debe tener");
 
     let mut p = base.clone();
     p.evaluations.ranges.0[0].0 = "No existe".into();
-    expect_invalid(&p, Method::ShortII, "No existe");
+    expect_invalid(&p, Method::sortII, "No existe");
 
     let mut p = base.clone();
     p.evaluations.criteria.as_mut().unwrap()[0] = 0.5;
-    expect_invalid(&p, Method::ShortII, "|x| >= 1");
+    expect_invalid(&p, Method::sortII, "|x| >= 1");
 
     let mut p = example("coches.ahp");
     p.criteria.truncate(1);
@@ -326,7 +326,7 @@ fn validation_rejects_inconsistent_projects() {
     expect_invalid(&p, Method::Classic, "2 criterios");
 
     assert!(example("coches.ahp").validate_classic().is_ok());
-    assert!(base.validate_short().is_ok());
+    assert!(base.validate_sort().is_ok());
 }
 
 #[test]
@@ -362,11 +362,11 @@ fn solve_rejects_non_finite_or_out_of_scale_evaluations() {
         );
     }
 
-    let short = example("londres.ahp");
-    let mut ev = Evaluations::defaults(&short, Method::ShortII);
+    let sort = example("londres.ahp");
+    let mut ev = Evaluations::defaults(&sort, Method::sortII);
     ev.per_criterion[0][0] = f64::NAN;
     assert!(matches!(
-        solve_short(&short, &ev),
+        solve_sort(&sort, &ev),
         Err(ProjectError::Invalid(_))
     ));
     let (valid, _) = Evaluations::from_project(&p, Method::Classic).unwrap();

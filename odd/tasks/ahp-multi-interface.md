@@ -6,7 +6,7 @@ Split the project into a Cargo workspace with three pieces:
 
 - `ahp` (library): AHP logic (classic and AHPSort II), the `.ahp` file format and a
   high-level "solve" API shared by both interfaces.
-- `cli` (binary `ahp`): `ahp classic <file>` / `ahp shortII <file>`, `--no-verbose`.
+- `cli` (binary `ahp`): `ahp classic <file>` / `ahp sortII <file>`, `--no-verbose`.
 - `ui` (binary `ahp-ui`): Slint desktop app with the guided screens for both methods.
 
 ## Problem / why
@@ -35,7 +35,7 @@ Users need a file format to load/save problems and two front-ends.
 ### `.ahp` file (TOML)
 
 ```toml
-method = "shortII"               # optional hint: "classic" | "shortII"
+method = "sortII"               # optional hint: "classic" | "sortII"
 alternatives = ["Barking", "Barnet", "Camden"]
 
 [[criteria]]
@@ -68,8 +68,8 @@ for matrix edits); a quiz shows the nearest Saaty integer.
 - `share::quiz`: `AhpScore::from_signed(f64)`, `AhpScore::to_signed()`, `signed_to_ratio`,
   `ratio_to_signed`, `QuizPairMatrix::labels()`, Spanish label helper for the 17 points.
 - `project` module: `Project` (serde), `load/save/from_toml_str/to_toml_string`,
-  `effective_range`, validation, `classic_quizzes`, `short_quizzes`,
-  `solve_classic`, `solve_short` returning plain view structs (matrix labels + cells +
+  `effective_range`, validation, `classic_quizzes`, `sort_quizzes`,
+  `solve_classic`, `solve_sort` returning plain view structs (matrix labels + cells +
   `WeightsReport`, ranking sorted descending, local priority points, alternative/profile
   local+global priorities, classification).
 
@@ -78,7 +78,7 @@ for matrix edits); a quiz shows the nearest Saaty integer.
 - [x] T0 Explore library and environment (route: inline, ~1.3k lines read once)
 - [x] T1 Workspace restructure + library fixes + `.ahp` format + solve API + examples + tests
       (route: delegated writer — 2+ non-trivial files)
-- [x] T2 CLI `ahp` with `classic`/`shortII`, `--no-verbose`, interactive questionnaire
+- [x] T2 CLI `ahp` with `classic`/`sortII`, `--no-verbose`, interactive questionnaire
       (route: delegated writer)
 - [x] T3 Slint UI: shell, start screen (mode, load/save file), classic flow (4 screens)
       (route: delegated writer)
@@ -89,7 +89,7 @@ for matrix edits); a quiz shows the nearest Saaty integer.
 ## Acceptance criteria
 
 - `cargo build --workspace` and `cargo test --workspace` pass.
-- `ahp classic examples/<file>.ahp` and `ahp shortII examples/<file>.ahp` print results;
+- `ahp classic examples/<file>.ahp` and `ahp sortII examples/<file>.ahp` print results;
   missing evaluations are asked interactively; `--no-verbose` prints only the result.
 - UI: forward/back navigation everywhere, "Saltar" from questionnaire to matrices,
   editable off-diagonal matrix cells with live weights, file load + "skip to result".

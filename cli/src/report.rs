@@ -1,6 +1,6 @@
 //! Plain-text rendering of solved projects.
 
-use ahp::{ClassicOutcome, MatrixView, Project, ShortOutcome, WeightsReport};
+use ahp::{ClassicOutcome, MatrixView, Project, WeightsReport, sortOutcome};
 
 use crate::table::{Align, Table, num};
 
@@ -129,7 +129,7 @@ fn priorities(
     out.push_str(&table.render());
 }
 
-fn classification(out: &mut String, outcome: &ShortOutcome) {
+fn classification(out: &mut String, outcome: &sortOutcome) {
     section(out, "Clasificación");
     let mut table = Table::new([
         "Alternativa",
@@ -153,7 +153,7 @@ fn classification(out: &mut String, outcome: &ShortOutcome) {
 
 /// AHPSort II report: matrices, local and global priorities when `verbose`, then the
 /// classification.
-pub fn short(project: &Project, outcome: &ShortOutcome, verbose: bool) -> String {
+pub fn sort(project: &Project, outcome: &sortOutcome, verbose: bool) -> String {
     let mut out = String::new();
     if verbose {
         matrix(
@@ -221,8 +221,8 @@ mod tests {
         }
     }
 
-    fn short_outcome() -> ShortOutcome {
-        ShortOutcome {
+    fn sort_outcome() -> sortOutcome {
+        sortOutcome {
             criteria: view(&["C1"], None),
             ranges: Vec::new(),
             local_priorities: Vec::new(),
@@ -240,7 +240,7 @@ mod tests {
 
     #[test]
     fn classification_shows_profile_priority_or_dash() {
-        let out = short(&Project::default(), &short_outcome(), false);
+        let out = sort(&Project::default(), &sort_outcome(), false);
         assert!(out.starts_with("Clasificación\n"), "{out}");
         assert!(out.contains("│ A           │            0.700 │"), "{out}");
         let row_b = out.lines().find(|l| l.contains("│ B ")).unwrap();

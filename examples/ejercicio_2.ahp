@@ -1,0 +1,58 @@
+# Ejercicio 2 - AHPSort II: criminalidad en las provincias andaluzas en 2017 normalizada
+# por población (hechos conocidos por cada 10.000 habitantes).
+#
+# - Delitos: Tabla 1 (data/Andalucía.xls). Habitantes: data/habitantes.xlsx.
+# - `values` = delitos / habitantes * 10.000, redondeado a 3 decimales.
+# - CPs y RPs recalculados para Andalucía: `range` = máximo andaluz redondeado hacia
+#   arriba (RP1..RP6 van de 0 a él); Alto = percentil 25, Medio = mediana y
+#   Bajo = percentil 75 de las 8 provincias.
+# - Se reutilizan los pesos de los criterios; las funciones de prioridad local se han de
+#   recalcular, así que la interfaz preguntará las comparaciones de los puntos.
+
+method = "sortII"
+alternatives = ["Almería", "Cádiz", "Córdoba", "Granada", "Huelva", "Jaén", "Málaga", "Sevilla"]
+
+[[criteria]]
+name = "Crímenes"
+unit = "delitos/10.000 hab."
+values = [0.314, 0.49, 0.257, 0.347, 0.152, 0.271, 0.342, 0.442]
+range = 0.49
+profiles = [0.268, 0.328, 0.371]
+
+[[criteria]]
+name = "Robo"
+unit = "delitos/10.000 hab."
+values = [236.187, 213.257, 186.769, 207.73, 213.413, 120.346, 272.09, 271.319]
+range = 280.0
+profiles = [202.49, 213.335, 244.97]
+
+[[criteria]]
+name = "Relacionado con Vehículo"
+unit = "delitos/10.000 hab."
+values = [28.71, 31.662, 21.769, 24.953, 26.795, 11.448, 37.608, 49.603]
+range = 50.0
+profiles = [24.157, 27.753, 33.148]
+
+[[criteria]]
+name = "Orden Público"
+unit = "delitos/10.000 hab."
+values = [5.288, 5.795, 2.819, 3.994, 2.967, 2.79, 4.895, 3.676]
+range = 5.8
+profiles = [2.93, 3.835, 4.993]
+
+[[criteria]]
+name = "Drogas"
+unit = "delitos/10.000 hab."
+values = [3.649, 6.565, 1.905, 6.751, 2.643, 2.057, 5.508, 2.131]
+range = 6.8
+profiles = [2.112, 3.146, 5.772]
+
+[categories]
+profile_type = "central"
+names = ["Alto", "Medio", "Bajo"]
+
+[evaluations]
+# Pesos de los criterios (los mismos del ejemplo de Londres):
+# Crímenes-Robo, Crímenes-Vehículo, Crímenes-Orden, Crímenes-Drogas, Robo-Vehículo,
+# Robo-Orden, Robo-Drogas, Vehículo-Orden, Vehículo-Drogas, Orden-Drogas
+criteria = [2, 3, 3, 4, 2, 2, 3, 1, 2, 2]

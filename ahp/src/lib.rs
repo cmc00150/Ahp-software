@@ -1,17 +1,17 @@
 pub mod ahp_classic;
-pub mod ahp_shortII;
+pub mod ahp_sortII;
 pub mod project;
 pub mod share;
 
 pub use ahp_classic::ahp::Ahp;
-pub use ahp_shortII::{
-    ahp_shortII::{AhpShort, Priorities},
+pub use ahp_sortII::{
+    ahp_sortII::{Ahpsort, Priorities},
     profile::Profile,
 };
 pub use project::{
     Categories, ClassicOutcome, Criterion, Evaluations, FileEvaluations, MatrixView, Method,
     MissingEvaluations, NamedVectors, ProfileType, Project, ProjectError, QuizSet, RangePoint,
-    ShortOutcome, classic_quizzes, quizzes, short_quizzes, solve_classic, solve_short,
+    classic_quizzes, quizzes, solve_classic, solve_sort, sort_quizzes, sortOutcome,
 };
 pub use share::{
     pesos::{WeightMethod, WeightsReport},

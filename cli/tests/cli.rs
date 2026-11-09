@@ -92,8 +92,8 @@ fn classic_no_verbose_prints_only_descending_ranking() {
 }
 
 #[test]
-fn short_complete_verbose_prints_every_section() {
-    let out = ahp(&["shortII", &example("londres.ahp")], "");
+fn sort_complete_verbose_prints_every_section() {
+    let out = ahp(&["sortII", &example("londres.ahp")], "");
     let stdout = text(&out.stdout);
     assert!(out.status.success(), "{}", text(&out.stderr));
     for section in [
@@ -120,8 +120,8 @@ fn short_complete_verbose_prints_every_section() {
 }
 
 #[test]
-fn short_no_verbose_prints_only_classification() {
-    let out = ahp(&["short-ii", &example("londres.ahp"), "--no-verbose"], "");
+fn sort_no_verbose_prints_only_classification() {
+    let out = ahp(&["sort-ii", &example("londres.ahp"), "--no-verbose"], "");
     let stdout = text(&out.stdout);
     assert!(out.status.success(), "{}", text(&out.stderr));
     assert!(stdout.starts_with("Clasificación"));
@@ -129,9 +129,9 @@ fn short_no_verbose_prints_only_classification() {
 }
 
 #[test]
-fn short_partial_answered_with_ones_succeeds() {
+fn sort_partial_answered_with_ones_succeeds() {
     let out = ahp(
-        &["shortII", &example("londres_parcial.ahp"), "--no-verbose"],
+        &["sortII", &example("londres_parcial.ahp"), "--no-verbose"],
         &ones(1000),
     );
     let stderr = text(&out.stderr);
@@ -145,9 +145,9 @@ fn short_partial_answered_with_ones_succeeds() {
 }
 
 #[test]
-fn short_partial_answered_with_a_mix_succeeds() {
+fn sort_partial_answered_with_a_mix_succeeds() {
     let out = ahp(
-        &["shortII", &example("londres_parcial.ahp")],
+        &["sortII", &example("londres_parcial.ahp")],
         &"3\n-5\n\n2\n-1\n9\n".repeat(40),
     );
     assert!(out.status.success(), "{}", text(&out.stderr));
@@ -155,7 +155,7 @@ fn short_partial_answered_with_a_mix_succeeds() {
 }
 
 #[test]
-fn classic_without_evaluations_and_short_stdin_fails() {
+fn classic_without_evaluations_and_sort_stdin_fails() {
     let out = ahp(&["classic", &example("coches_sin_evaluar.ahp")], "3\n-5\n");
     assert!(!out.status.success());
     assert_eq!(out.status.code(), Some(1));
@@ -214,15 +214,15 @@ fn saved_project_runs_without_questions() {
 }
 
 #[test]
-fn saved_short_project_runs_without_questions() {
+fn saved_sort_project_runs_without_questions() {
     let saved = tmp_file("londres_guardado.ahp");
     let first = ahp(
-        &["shortII", &example("londres_parcial.ahp"), "--save", &saved],
+        &["sortII", &example("londres_parcial.ahp"), "--save", &saved],
         &ones(1000),
     );
     assert!(first.status.success(), "{}", text(&first.stderr));
 
-    let second = ahp(&["shortII", &saved], "");
+    let second = ahp(&["sortII", &saved], "");
     assert!(second.status.success(), "{}", text(&second.stderr));
     assert!(!text(&second.stderr).contains("Respuesta"));
     assert_eq!(first.stdout, second.stdout);
@@ -236,8 +236,8 @@ fn missing_file_reports_error() {
 }
 
 #[test]
-fn classic_project_is_rejected_by_short() {
-    let out = ahp(&["shortII", &example("coches.ahp")], "");
+fn classic_project_is_rejected_by_sort() {
+    let out = ahp(&["sortII", &example("coches.ahp")], "");
     assert_eq!(out.status.code(), Some(1));
     assert!(text(&out.stderr).starts_with("Error: "));
 }

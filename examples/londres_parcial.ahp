@@ -11,7 +11,7 @@
 #   x <= -1: gana el de la derecha; 1: iguales. Este fichero solo trae `criteria`; las
 #   comparaciones de rangos (`[evaluations.ranges]`) las preguntará la interfaz.
 
-method = "shortII"
+method = "sortII"
 alternatives = ["Barking", "Barnet", "Camden", "Hackney", "Richmond", "Westminster"]
 
 [[criteria]]

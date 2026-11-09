@@ -14,7 +14,7 @@ pub enum Align {
 
 /// A table with a header row and any number of body rows.
 ///
-/// Rows shorter than the widest row are padded with empty cells.
+/// Rows sorter than the widest row are padded with empty cells.
 #[derive(Debug, Clone, Default)]
 pub struct Table {
     headers: Vec<String>,
