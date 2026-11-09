@@ -20,7 +20,7 @@ pub struct AhpShort {
     alternatives_labels: Vec<String>,
     categories: Vec<(String, Option<Profile>)>,
     ranges: Vec<f64>,
-    values: Table,
+    values: Table, // Criterios x Alternativas
 
     criteria_matrix: Option<PairMatrix>,
     ranges_matrix: Option<Vec<PairMatrix>>,
@@ -484,12 +484,20 @@ mod tests {
                 let obtenido = interpolate(&POPULATION, v);
                 // La hoja redondea a 3 decimales
                 ((obtenido - esperado).abs() >= 2e-3).then(|| {
-                    format!("fila {}: g={v} esperado {esperado} obtenido {obtenido:.3}", i + 1)
+                    format!(
+                        "fila {}: g={v} esperado {esperado} obtenido {obtenido:.3}",
+                        i + 1
+                    )
                 })
             })
             .collect();
 
-        assert!(errores.is_empty(), "{} filas distintas:\n{}", errores.len(), errores.join("\n"));
+        assert!(
+            errores.is_empty(),
+            "{} filas distintas:\n{}",
+            errores.len(),
+            errores.join("\n")
+        );
     }
 
     // --- classify: datos de la tabla de boroughs de las diapositivas ---
@@ -550,13 +558,24 @@ mod tests {
         let misbehaviour: &[f64] = &[0.285, 0.287, 0.221];
         let no_force: &[f64] = &[0.187, 0.226, 0.175];
         let drug: &[f64] = &[0.203, 0.236, 0.197];
-        let rows = [population, robbery, vehicle, violent, misbehaviour, no_force, drug];
+        let rows = [
+            population,
+            robbery,
+            vehicle,
+            violent,
+            misbehaviour,
+            no_force,
+            drug,
+        ];
 
         // En la tabla todos los criterios pesan lo mismo (la global es la suma simple)
         let global = global_priorities(&rows, &[1.0; 7]);
         // Las celdas de la tabla están redondeadas a 3 decimales, de ahí la tolerancia
         for (obtenido, esperado) in global.iter().zip([1.196, 1.328, 1.058]) {
-            assert!((obtenido - esperado).abs() < 4e-3, "esperado {esperado}, obtenido {obtenido}");
+            assert!(
+                (obtenido - esperado).abs() < 4e-3,
+                "esperado {esperado}, obtenido {obtenido}"
+            );
         }
 
         // Con pesos distintos se pondera de verdad

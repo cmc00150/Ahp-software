@@ -8,7 +8,7 @@ use crate::share::{
 pub struct Ahp {
     criteria_labels: Vec<String>,
     alternatives_labels: Vec<String>,
-    values: Table,
+    values: Table, // Criterios x Alternativas
 
     criteria_matrix: Option<PairMatrix>,
     alt_matrices: Option<Vec<PairMatrix>>,
