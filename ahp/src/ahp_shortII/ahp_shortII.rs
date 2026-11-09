@@ -231,42 +231,124 @@ impl AhpShort {
         })
     }
 
-    /// Prioridad local de cada alternativa bajo cada criterio, por interpolación lineal
-    /// entre las dos prioridades de rangos más cercanas al valor de la celda:
+    /// Prioridades de cada perfil: la local bajo cada criterio y la global.
     ///
-    /// `p_kj = p_oj + (p_oj+1 - p_oj) / (s_oj+1 - s_oj) * (g_j(a_k) - s_oj)`
+    /// - Local: se calcula igual que la de las alternativas,
+    ///   interpolando el valor del perfil entre las prioridades de rangos de ese criterio.
+    /// - Global: suma de las locales ponderadas por el peso de cada criterio.
     ///
-    /// Devuelve una fila por criterio `(nombre criterio, prioridades por alternativa)`, con la
-    /// misma forma que la tabla de valores.
+    /// Devuelve una fila por perfil `(categoría, [(criterio, prioridad local)], prioridad global)`,
+    /// en el orden de las categorías. Las categorías sin perfil no aparecen.
     ///
     /// # Errores
     ///
-    /// Si todavía no se han enviado los cuestionarios de rangos (faltan los pesos).
-    pub fn calc_alternatives_local_priorities(
+    /// Si faltan la matriz de criterios o los cuestionarios de rangos.
+    pub fn profiles_global_priorities(
         &self,
-    ) -> Result<Vec<(String, Vec<f64>)>, &'static str> {
-        const MISSING: &str = "[AhpShort::calc_alternatives_local_priorities] Faltan las prioridades de rangos, envía antes los cuestionarios de rangos.";
+    ) -> Result<Vec<(&str, Vec<(&str, f64)>, f64)>, &'static str> {
+        const MISSING: &str = "[AhpShort::profiles_global_priorities] Faltan las prioridades de rangos, envía antes los cuestionarios de rangos.";
 
+        let c_weights = self
+            .criteria_weights(WeightMethod::EigenValues)
+            .ok_or("[AhpShort::profiles_global_priorities] Falta la matriz de criterios.")?
+            .weights;
         let priorities = self.ranges_priorities.as_ref().ok_or(MISSING)?;
 
-        self.criteria_labels
+        // (valor original s, peso p) de cada rango/perfil, uno por criterio
+        let points = priorities
             .iter()
-            .zip(&self.values) // Obtenemos un vector ("criterio1", ("unidades", [valores]))
-            .zip(priorities) // Obtenemos un vector (("criterio1", ("unidades", [valores])), [prioridades])
-            .map(|((label, (_units, cells)), priorities)| {
+            .map(|row| {
+                row.iter()
+                    .map(|p| p.weight.map(|w| (p.original, w)))
+                    .collect::<Option<Vec<(f64, f64)>>>()
+                    .ok_or(MISSING)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(self
+            .categories
+            .iter()
+            .filter_map(|(label, profile)| Some((label.as_str(), profile.as_ref()?)))
+            .map(|(label, profile)| {
+                // Prioridades locales: una por criterio
+                let local = self
+                    .criteria_labels
+                    .iter()
+                    .zip(&points)
+                    .zip(profile.values())
+                    .map(|((criterion, points), value)| {
+                        (criterion.as_str(), interpolate(points, value.data))
+                    })
+                    .collect::<Vec<_>>();
+                // Prioridad global: suma ponderada de las locales
+                let global = local.iter().zip(&c_weights).map(|((_, p), w)| p * w).sum();
+                (label, local, global)
+            })
+            .collect())
+    }
+
+    /// Prioridades de cada alternativa: la local bajo cada criterio y la global.
+    ///
+    /// - Local: interpolación lineal entre las dos prioridades de rangos más cercanas al valor
+    ///   de la celda:
+    ///
+    ///   `p_kj = p_oj + (p_oj+1 - p_oj) / (s_oj+1 - s_oj) * (g_j(a_k) - s_oj)`
+    ///
+    /// - Global: suma de las locales ponderadas por el peso de cada criterio.
+    ///
+    /// Devuelve una fila por alternativa
+    /// `(alternativa, [(criterio, prioridad local)], prioridad global)`.
+    ///
+    /// # Errores
+    ///
+    /// Si faltan la matriz de criterios o los cuestionarios de rangos.
+    pub fn alternatives_global_priorities(
+        &self,
+    ) -> Result<Vec<(&str, Vec<(&str, f64)>, f64)>, &'static str> {
+        const MISSING: &str = "[AhpShort::alternatives_global_priorities] Faltan las prioridades de rangos, envía antes los cuestionarios de rangos.";
+
+        let c_weights = self
+            .criteria_weights(WeightMethod::EigenValues)
+            .ok_or("[AhpShort::alternatives_global_priorities] Falta la matriz de criterios.")?
+            .weights;
+        let priorities = self.ranges_priorities.as_ref().ok_or(MISSING)?;
+
+        // Prioridades locales, criterios x alternativas
+        let rows = self
+            .values
+            .iter() // ("unidades", [valores]) de cada criterio
+            .zip(priorities) // junto a las prioridades de sus rangos/perfiles
+            .map(|((_units, cells), priorities)| {
                 // (valor original s, peso p) de cada rango/perfil del criterio
                 let points = priorities
                     .iter()
                     .map(|p| p.weight.map(|w| (p.original, w)))
                     .collect::<Option<Vec<(f64, f64)>>>()
                     .ok_or(MISSING)?;
-
-                Ok((
-                    label.clone(),
-                    cells.iter().map(|&v| interpolate(&points, v)).collect(),
-                ))
+                Ok(cells
+                    .iter()
+                    .map(|&v| interpolate(&points, v))
+                    .collect::<Vec<f64>>())
             })
-            .collect()
+            .collect::<Result<Vec<_>, &'static str>>()?;
+        let rows = rows.iter().map(Vec::as_slice).collect::<Vec<_>>();
+
+        Ok(self
+            .alternatives_labels
+            .iter()
+            .zip(global_priorities(&rows, &c_weights))
+            .enumerate()
+            .map(|(a, (label, global))| {
+                // Columna `a` de la tabla de locales: una prioridad por criterio
+                let local = self
+                    .criteria_labels
+                    .iter()
+                    .zip(&rows)
+                    .map(|(criterion, row)| (criterion.as_str(), row[a]))
+                    .collect();
+                (label.as_str(), local, global)
+            })
+            .collect())
     }
 
     /// Clasifica cada alternativa en una categoría.
@@ -286,41 +368,18 @@ impl AhpShort {
     ///
     /// Si faltan la matriz de criterios o los cuestionarios de rangos.
     pub fn classify(&self) -> Result<Vec<(String, f64, String)>, &'static str> {
-        const MISSING: &str =
-            "[AhpShort::classify] Faltan la matriz de criterios o las prioridades de rangos.";
-
-        let c_weights = self
-            .criteria_weights(WeightMethod::EigenValues)
-            .ok_or(MISSING)?
-            .weights;
-        let priorities = self.ranges_priorities.as_ref().ok_or(MISSING)?;
-        let local = self.calc_alternatives_local_priorities()?;
-
         // 1. Prioridades globales de las alternativas
-        let rows = local.iter().map(|(_, c)| c.as_slice()).collect::<Vec<_>>();
-        let global = global_priorities(&rows, &c_weights);
+        let global = self.alternatives_global_priorities()?;
 
-        // 2. Prioridades globales de los perfiles: (etiqueta, prioridad, es central)
+        // 2. Prioridades globales de los perfiles: (etiqueta, prioridad, es central).
+        // `profiles_global_priorities` sigue el orden de las categorías con perfil.
         let profiles = self
             .categories
             .iter()
-            .enumerate()
-            .filter_map(|(c, (label, profile))| Some((c, label, profile.as_ref()?)))
-            .map(|(c, label, profile)| {
-                let g = priorities
-                    .iter()
-                    .zip(&c_weights)
-                    .map(|(row, w)| {
-                        row.iter()
-                            .find(|p| p.profile == Some(c))
-                            .and_then(|p| p.weight)
-                            .map(|weight| weight * w)
-                    })
-                    .sum::<Option<f64>>()
-                    .ok_or(MISSING)?;
-                Ok((label.as_str(), g, matches!(profile, Profile::Central(_))))
-            })
-            .collect::<Result<Vec<(&str, f64, bool)>, &'static str>>()?;
+            .filter_map(|(_, profile)| profile.as_ref())
+            .zip(self.profiles_global_priorities()?)
+            .map(|(profile, (label, _, g))| (label, g, matches!(profile, Profile::Central(_))))
+            .collect::<Vec<(&str, f64, bool)>>();
 
         // 3. Límites de cada categoría y asignación
         // Categoría sin perfil (la última): recoge lo que no entra en ninguna de las anteriores
@@ -330,11 +389,9 @@ impl AhpShort {
         };
         let limits = category_limits(&profiles, catch_all);
 
-        Ok(self
-            .alternatives_labels
-            .iter()
-            .zip(global)
-            .map(|(label, g)| (label.clone(), g, assign_category(&limits, g).to_owned()))
+        Ok(global
+            .into_iter()
+            .map(|(label, _, g)| (label.to_owned(), g, assign_category(&limits, g).to_owned()))
             .collect())
     }
 }
