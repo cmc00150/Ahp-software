@@ -1,0 +1,135 @@
+// 17-dot Saaty scale for one pairwise question.
+//
+// Dot p: p < 8 => the LEFT item dominates (p = 0 is 9), p = 8 => equal, p > 8 => the RIGHT
+// item dominates (p = 16 is 9). Rust owns the mapping; this component only draws `position`
+// and reports clicks/arrow presses through `select`.
+import { Theme } from "../theme.slint";
+import { ArrowButton } from "common.slint";
+
+export component SaatyScale {
+    in property <int> position: 8;
+    in property <string> label;
+    // 1: arrow pointing right (left dominates), -1: pointing left, 0: no arrow.
+    in property <int> direction;
+    // Colour behind the scale: the label box uses it to hide the arrow line behind the text.
+    in property <color> backdrop: Theme.surface;
+    in property <length> cell: 24px;
+    callback select(int);
+
+    property <int> count: 17;
+    property <length> side: 34px;
+    property <length> track-width: root.count * root.cell;
+    property <color> arrow-color: Theme.accent;
+
+    width: root.track-width + 2 * root.side;
+
+    VerticalLayout {
+        spacing: 4px;
+
+        // Label with the direction arrow passing behind it.
+        Rectangle {
+            height: 26px;
+            if root.direction != 0: Rectangle {
+                x: root.side + root.cell / 2;
+                y: (parent.height - self.height) / 2;
+                width: root.track-width - root.cell;
+                height: 2px;
+                background: root.arrow-color;
+            }
+            if root.direction > 0: Path {
+                x: root.side + root.track-width - root.cell / 2 - 6px;
+                y: (parent.height - self.height) / 2;
+                width: 12px;
+                height: 12px;
+                viewbox-width: 12;
+                viewbox-height: 12;
+                fill: root.arrow-color;
+                commands: "M 0 0 L 12 6 L 0 12 Z";
+            }
+            if root.direction < 0: Path {
+                x: root.side + root.cell / 2 - 6px;
+                y: (parent.height - self.height) / 2;
+                width: 12px;
+                height: 12px;
+                viewbox-width: 12;
+                viewbox-height: 12;
+                fill: root.arrow-color;
+                commands: "M 12 0 L 0 6 L 12 12 Z";
+            }
+            Rectangle {
+                width: label-text.preferred-width + 20px;
+                height: parent.height;
+                x: (parent.width - self.width) / 2;
+                background: root.backdrop;
+                label-text := Text {
+                    text: root.label;
+                    font-weight: 700;
+                    color: root.direction == 0 ? Theme.muted : Theme.accent;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
+
+        // Dots with the arrows on both sides.
+        HorizontalLayout {
+            spacing: 0px;
+            Rectangle {
+                width: root.side;
+                ArrowButton {
+                    x: 0px;
+                    left: true;
+                    enabled: root.position > 0;
+                    clicked => {
+                        root.select(root.position - 1);
+                    }
+                }
+            }
+            Rectangle {
+                width: root.track-width;
+                height: root.cell;
+                // Base line.
+                Rectangle {
+                    x: root.cell / 2;
+                    y: (parent.height - self.height) / 2;
+                    width: parent.width - root.cell;
+                    height: 2px;
+                    background: Theme.border;
+                }
+                for i in root.count: Rectangle {
+                    property <bool> selected: i == root.position;
+                    property <bool> in-span: (i >= min(root.position, 8) && i <= max(root.position, 8));
+                    property <length> size: self.selected ? 18px : (i == 8 ? 13px : 10px);
+                    x: i * root.cell;
+                    width: root.cell;
+                    height: root.cell;
+                    Rectangle {
+                        width: parent.size;
+                        height: parent.size;
+                        border-radius: self.width / 2;
+                        background: parent.selected ? Theme.accent : (parent.in-span && root.position != 8 ? Theme.accent-soft : Theme.surface);
+                        border-width: parent.selected ? 0px : 2px;
+                        border-color: dot-touch.has-hover ? Theme.accent : (parent.in-span && root.position != 8 ? Theme.accent : #b6c0cf);
+                    }
+                    dot-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            root.select(i);
+                        }
+                    }
+                }
+            }
+            Rectangle {
+                width: root.side;
+                ArrowButton {
+                    x: parent.width - self.width;
+                    left: false;
+                    enabled: root.position < root.count - 1;
+                    clicked => {
+                        root.select(root.position + 1);
+                    }
+                }
+            }
+        }
+    }
+}

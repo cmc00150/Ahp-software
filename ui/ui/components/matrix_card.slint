@@ -1,0 +1,165 @@
+// Card with a full n x n pairwise matrix, an extra "Peso" column and the consistency figures.
+// Off-diagonal cells are editable: a value is committed with Enter or when the cell loses
+// focus, and Rust refreshes every cell (reciprocal included) and the weights in place.
+import { LineEdit } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { MatrixCardData, MatrixStats } from "../stores.slint";
+import { Card } from "common.slint";
+
+component MatrixInput inherits Rectangle {
+    // Text coming from Rust; the input follows it even after the user typed in it.
+    in property <string> model-text;
+    in property <bool> valid: true;
+    callback committed(string);
+    border-radius: 5px;
+    border-width: root.valid ? 0px : 2px;
+    border-color: Theme.danger;
+    background: root.valid ? transparent : Theme.danger-soft;
+    input := LineEdit {
+        width: parent.width;
+        height: parent.height;
+        text: root.model-text;
+        horizontal-alignment: center;
+        accepted(t) => {
+            root.committed(t);
+        }
+        changed has-focus => {
+            if !self.has-focus && self.text != root.model-text {
+                root.committed(self.text);
+            }
+        }
+    }
+    changed model-text => {
+        input.text = root.model-text;
+    }
+}
+
+export component MatrixCard inherits Card {
+    in property <MatrixCardData> data;
+    in property <MatrixStats> stats;
+    in property <length> cell-width: 86px;
+    in property <length> label-width: 170px;
+    in property <length> row-height: 34px;
+    // (row, column, text)
+    callback edit(int, int, string);
+
+    HorizontalLayout {
+        spacing: 12px;
+        Text {
+            text: root.data.title;
+            font-size: Theme.font-h2;
+            font-weight: 700;
+            color: Theme.text;
+            vertical-alignment: center;
+        }
+        if root.data.subtitle != "": Text {
+            text: root.data.subtitle;
+            color: Theme.muted;
+            vertical-alignment: center;
+        }
+    }
+
+    HorizontalLayout {
+        alignment: start;
+        VerticalLayout {
+            spacing: 4px;
+            HorizontalLayout {
+                spacing: 4px;
+                height: 24px;
+                Rectangle {
+                    width: root.label-width;
+                }
+                for label in root.data.labels: Text {
+                    width: root.cell-width;
+                    text: label;
+                    font-weight: 600;
+                    color: Theme.muted;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                    overflow: elide;
+                }
+                Text {
+                    width: root.cell-width;
+                    text: "Peso";
+                    font-weight: 700;
+                    color: Theme.accent;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+            for row[i] in root.data.rows: HorizontalLayout {
+                spacing: 4px;
+                height: root.row-height;
+                Text {
+                    width: root.label-width;
+                    text: root.data.labels[i];
+                    font-weight: 600;
+                    color: Theme.text;
+                    vertical-alignment: center;
+                    overflow: elide;
+                }
+                for cell[j] in row: Rectangle {
+                    width: root.cell-width;
+                    if !cell.editable: Rectangle {
+                        background: Theme.surface-alt;
+                        border-radius: 5px;
+                        border-width: 1px;
+                        border-color: Theme.border;
+                        Text {
+                            text: cell.text;
+                            color: Theme.muted;
+                        }
+                    }
+                    if cell.editable: MatrixInput {
+                        model-text: cell.text;
+                        valid: cell.valid;
+                        committed(t) => {
+                            root.edit(i, j, t);
+                        }
+                    }
+                }
+                Rectangle {
+                    width: root.cell-width;
+                    background: Theme.accent-soft;
+                    border-radius: 5px;
+                    Text {
+                        text: root.stats.weights[i];
+                        font-weight: 700;
+                        color: Theme.accent;
+                    }
+                }
+            }
+        }
+    }
+
+    HorizontalLayout {
+        spacing: 24px;
+        alignment: start;
+        Text {
+            text: "λmax = " + root.stats.lambda-max;
+            color: Theme.text;
+        }
+        Text {
+            text: "CI = " + root.stats.ci;
+            color: Theme.text;
+        }
+        Text {
+            text: "CR = " + root.stats.cr;
+            font-weight: root.stats.inconsistent ? 700 : 400;
+            color: root.stats.inconsistent ? Theme.warning : Theme.success;
+        }
+        if root.stats.inconsistent: Rectangle {
+            background: Theme.warning-soft;
+            border-radius: 6px;
+            HorizontalLayout {
+                padding-left: 8px;
+                padding-right: 8px;
+                Text {
+                    text: "Inconsistente: CR > 0,1. Revisa las comparaciones.";
+                    color: Theme.warning;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}

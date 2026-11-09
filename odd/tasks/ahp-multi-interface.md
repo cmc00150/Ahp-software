@@ -80,7 +80,7 @@ for matrix edits); a quiz shows the nearest Saaty integer.
       (route: delegated writer — 2+ non-trivial files)
 - [x] T2 CLI `ahp` with `classic`/`shortII`, `--no-verbose`, interactive questionnaire
       (route: delegated writer)
-- [ ] T3 Slint UI: shell, start screen (mode, load/save file), classic flow (4 screens)
+- [x] T3 Slint UI: shell, start screen (mode, load/save file), classic flow (4 screens)
       (route: delegated writer)
 - [ ] T4 Slint UI: AHPSort II flow (5 screens, local priority tables + charts)
       (route: delegated writer)
@@ -114,8 +114,9 @@ for matrix edits); a quiz shows the nearest Saaty integer.
 - T2: delegated writer; `cargo test --workspace` → 41 + 15 + 13 passed (parent spot check); smoke `ahp classic examples/coches.ahp --no-verbose` OK.
   Note: limiting-profile convention in the library = profile k is the UPPER limit of category k and the profile-less LAST category collects everything above (categories declared worst→best). The UI must explain this.
 - T2 commit `7e7e77e`. T2 review: medium, granted, lens reliability → approved + acknowledged (lineage review-dfdcd27cb495aae3). Advisory R3-001 (save before solve) fixed in a follow-up commit; R3-002 (weak mismatch test) and R3-003 (unwrap_or on missing list) left as follow-ups.
+- T3: delegated writer (first one stopped by accident, resumed by a fresh writer that kept its work); `cargo test --workspace` → 42 + 15 + 13 + 21 passed (parent spot check); clippy clean in ui; fmt clean; launch smoke exit 124 (window up). R3-001 lib follow-up fixed (check_signed in check_evaluations).
 - Delivery strategy: ask-on-risk → user chose `feature-branch-chain`.
 
 ## Next step
 
-T3 (UI shell + classic).
+T4 (UI AHPSort II): extend AppState::enter ShortII arm, Screen list per method, models::refresh, app.slint ComingSoonPage slots, new ShortII stores.

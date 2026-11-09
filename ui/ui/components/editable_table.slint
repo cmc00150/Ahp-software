@@ -1,0 +1,176 @@
+// Editable table: one row per item (alternatives), one column per criterion, with editable
+// headers (name and unit), editable row names and numeric body cells. Reusable for any
+// rows x columns numeric table (e.g. AHPSort II profiles).
+import { Button, LineEdit, ScrollView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { DataColumn, DataRow } from "../stores.slint";
+import { RemoveButton } from "common.slint";
+
+// Text input with a red frame when its content is not valid.
+component CellInput inherits Rectangle {
+    in property <string> text;
+    in property <bool> valid: true;
+    in property <string> placeholder;
+    in property <TextHorizontalAlignment> alignment: left;
+    callback edited(string);
+    border-radius: 5px;
+    border-width: root.valid ? 0px : 2px;
+    border-color: Theme.danger;
+    background: root.valid ? transparent : Theme.danger-soft;
+    LineEdit {
+        width: parent.width;
+        height: parent.height;
+        text: root.text;
+        placeholder-text: root.placeholder;
+        horizontal-alignment: root.alignment;
+        edited(t) => {
+            root.edited(t);
+        }
+    }
+}
+
+component HeaderLabel inherits Text {
+    color: Theme.muted;
+    font-size: Theme.font-small;
+    font-weight: 600;
+    vertical-alignment: center;
+}
+
+export component EditableTable {
+    in property <[DataColumn]> columns;
+    in property <[DataRow]> rows;
+    in property <bool> show-units: true;
+    in property <string> column-header: "Criterio";
+    in property <string> unit-header: "Unidad";
+    in property <string> row-header: "Alternativa";
+    in property <string> add-column-label: "+ Añadir criterio";
+    in property <string> add-row-label: "+ Añadir alternativa";
+    in property <length> cell-width: 150px;
+    in property <length> head-width: 190px;
+    in property <length> row-height: 34px;
+    callback column-renamed(int, string);
+    callback unit-changed(int, string);
+    callback row-renamed(int, string);
+    // (row, column, text)
+    callback cell-edited(int, int, string);
+    callback add-column();
+    callback remove-column(int);
+    callback add-row();
+    callback remove-row(int);
+
+    ScrollView {
+        VerticalLayout {
+            padding: 4px;
+            spacing: 6px;
+            alignment: start;
+
+            // Criterion names.
+            HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+                height: root.row-height;
+                HeaderLabel {
+                    width: root.head-width;
+                    text: root.column-header;
+                }
+                for col[c] in root.columns: HorizontalLayout {
+                    width: root.cell-width;
+                    spacing: 2px;
+                    CellInput {
+                        width: root.cell-width - 26px;
+                        text: col.name;
+                        placeholder: "Nombre";
+                        edited(t) => {
+                            root.column-renamed(c, t);
+                        }
+                    }
+                    RemoveButton {
+                        y: (parent.height - self.height) / 2;
+                        enabled: root.columns.length > 1;
+                        clicked => {
+                            root.remove-column(c);
+                        }
+                    }
+                }
+                Button {
+                    text: root.add-column-label;
+                    clicked => {
+                        root.add-column();
+                    }
+                }
+            }
+
+            // Units.
+            if root.show-units: HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+                height: root.row-height;
+                HeaderLabel {
+                    width: root.head-width;
+                    text: root.unit-header;
+                }
+                for col[c] in root.columns: CellInput {
+                    width: root.cell-width;
+                    text: col.unit;
+                    placeholder: "Unidad";
+                    edited(t) => {
+                        root.unit-changed(c, t);
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 1px;
+                background: Theme.border;
+            }
+
+            HeaderLabel {
+                text: root.row-header;
+            }
+
+            // Body: one row per item.
+            for row[r] in root.rows: HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+                height: root.row-height;
+                HorizontalLayout {
+                    width: root.head-width;
+                    spacing: 2px;
+                    RemoveButton {
+                        y: (parent.height - self.height) / 2;
+                        enabled: root.rows.length > 1;
+                        clicked => {
+                            root.remove-row(r);
+                        }
+                    }
+                    CellInput {
+                        text: row.name;
+                        placeholder: "Nombre";
+                        edited(t) => {
+                            root.row-renamed(r, t);
+                        }
+                    }
+                }
+                for cell[c] in row.cells: CellInput {
+                    width: root.cell-width;
+                    text: cell.text;
+                    valid: cell.valid;
+                    alignment: right;
+                    edited(t) => {
+                        root.cell-edited(r, c, t);
+                    }
+                }
+            }
+
+            HorizontalLayout {
+                alignment: start;
+                Button {
+                    text: root.add-row-label;
+                    clicked => {
+                        root.add-row();
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,122 @@
+// Data exchanged with Rust. Each screen has one global "store": Rust fills its properties
+// and handles its callbacks. AHPSort II (T4) adds its own stores next to these.
+
+export struct DataColumn {
+    name: string,
+    unit: string,
+}
+
+export struct DataCell {
+    text: string,
+    valid: bool,
+}
+
+export struct DataRow {
+    name: string,
+    cells: [DataCell],
+}
+
+export struct QuizRow {
+    left-name: string,
+    left-detail: string,
+    right-name: string,
+    right-detail: string,
+    // Dot of the Saaty scale (0..=16, 8 = equal).
+    position: int,
+    label: string,
+    // 1: arrow points right (left dominates), -1: points left, 0: no arrow.
+    direction: int,
+}
+
+export struct MatrixCell {
+    text: string,
+    editable: bool,
+    valid: bool,
+}
+
+export struct MatrixCardData {
+    title: string,
+    subtitle: string,
+    labels: [string],
+    rows: [[MatrixCell]],
+}
+
+export struct MatrixStats {
+    weights: [string],
+    lambda-max: string,
+    ci: string,
+    cr: string,
+    inconsistent: bool,
+}
+
+export struct RankItem {
+    position: int,
+    name: string,
+    score: string,
+    // Score relative to the first one (0..1), for the bar.
+    share: float,
+    // Visual scale of the item (1.5 for the first one, decreasing).
+    scale: float,
+}
+
+// Shell: current screen, method, file and messages.
+export global NavStore {
+    // 0 start, 1 data, 2 questionnaires, 3 matrices, 4 ranking.
+    in property <int> screen: 0;
+    in property <int> max-reached: 1;
+    in property <bool> classic: true;
+    in property <bool> has-project: false;
+    in property <string> file-name;
+    in property <string> message;
+    in property <bool> message-is-error;
+    callback go-to(int);
+    callback back();
+    callback next();
+    callback save();
+    callback new-problem();
+    callback load-file();
+    callback set-classic(bool);
+    callback dismiss-message();
+}
+
+export global DataStore {
+    in property <[DataColumn]> columns;
+    in property <[DataRow]> rows;
+    in property <string> errors;
+    in property <bool> can-jump-to-result;
+    callback rename-criterion(int, string);
+    callback set-unit(int, string);
+    callback rename-alternative(int, string);
+    // (alternative, criterion, text)
+    callback set-value(int, int, string);
+    callback add-criterion();
+    callback remove-criterion(int);
+    callback add-alternative();
+    callback remove-alternative(int);
+    callback jump-to-result();
+}
+
+export global QuizStore {
+    in property <[string]> steps;
+    in property <int> current;
+    in property <string> title;
+    in property <string> subtitle;
+    in property <[QuizRow]> rows;
+    // (question, position)
+    callback select(int, int);
+    callback go-to-group(int);
+    callback previous-group();
+    callback next-group();
+    callback skip();
+}
+
+export global MatrixStore {
+    in property <[MatrixCardData]> cards;
+    in property <[MatrixStats]> stats;
+    // (card, row, column, text)
+    callback edit(int, int, int, string);
+}
+
+export global RankingStore {
+    in property <[RankItem]> items;
+}

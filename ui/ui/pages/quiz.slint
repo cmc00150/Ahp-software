@@ -1,0 +1,195 @@
+// Screen 2: questionnaires (criteria first, then the alternatives under each criterion).
+import { Button, ScrollView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { QuizRow, QuizStore } from "../stores.slint";
+import { Card } from "../components/common.slint";
+import { SaatyScale } from "../components/saaty_scale.slint";
+
+// One dot per questionnaire on a line; done/current dots are highlighted.
+component QuizStepper inherits Rectangle {
+    in property <[string]> steps;
+    in property <int> current;
+    callback clicked(int);
+    property <length> gap: 64px;
+    height: 54px;
+    width: max(1, root.steps.length) * root.gap;
+    Rectangle {
+        x: root.gap / 2;
+        y: 10px;
+        width: max(0, root.steps.length - 1) * root.gap;
+        height: 3px;
+        background: Theme.border;
+    }
+    Rectangle {
+        x: root.gap / 2;
+        y: 10px;
+        width: root.current * root.gap;
+        height: 3px;
+        background: Theme.accent;
+    }
+    for step[i] in root.steps: Rectangle {
+        x: i * root.gap;
+        width: root.gap;
+        height: parent.height;
+        Rectangle {
+            property <bool> current: i == root.current;
+            y: 11px - self.height / 2;
+            width: self.current ? 18px : 12px;
+            height: self.width;
+            border-radius: self.width / 2;
+            background: i <= root.current ? Theme.accent : Theme.surface;
+            border-width: 2px;
+            border-color: i <= root.current || touch.has-hover ? Theme.accent : #b6c0cf;
+        }
+        Text {
+            y: 24px;
+            width: parent.width - 4px;
+            text: step;
+            font-size: 11px;
+            color: i == root.current ? Theme.accent : Theme.muted;
+            font-weight: i == root.current ? 700 : 400;
+            horizontal-alignment: center;
+            overflow: elide;
+        }
+        touch := TouchArea {
+            mouse-cursor: pointer;
+            clicked => {
+                root.clicked(i);
+            }
+        }
+    }
+}
+
+component QuestionRow inherits Rectangle {
+    in property <QuizRow> question;
+    callback select(int);
+    background: Theme.surface;
+    border-radius: Theme.radius;
+    border-width: 1px;
+    border-color: Theme.border;
+    HorizontalLayout {
+        padding: 12px;
+        spacing: 16px;
+        alignment: center;
+        VerticalLayout {
+            width: 210px;
+            alignment: center;
+            spacing: 2px;
+            Text {
+                text: root.question.left-name;
+                font-size: Theme.font-h2;
+                font-weight: root.question.direction > 0 ? 700 : 500;
+                color: root.question.direction > 0 ? Theme.accent : Theme.text;
+                horizontal-alignment: right;
+                overflow: elide;
+            }
+            if root.question.left-detail != "": Text {
+                text: root.question.left-detail;
+                color: Theme.muted;
+                horizontal-alignment: right;
+            }
+        }
+        SaatyScale {
+            position: root.question.position;
+            label: root.question.label;
+            direction: root.question.direction;
+            backdrop: Theme.surface;
+            select(p) => {
+                root.select(p);
+            }
+        }
+        VerticalLayout {
+            width: 210px;
+            alignment: center;
+            spacing: 2px;
+            Text {
+                text: root.question.right-name;
+                font-size: Theme.font-h2;
+                font-weight: root.question.direction < 0 ? 700 : 500;
+                color: root.question.direction < 0 ? Theme.accent : Theme.text;
+                overflow: elide;
+            }
+            if root.question.right-detail != "": Text {
+                text: root.question.right-detail;
+                color: Theme.muted;
+            }
+        }
+    }
+}
+
+export component QuizPage {
+    VerticalLayout {
+        padding: 20px;
+        spacing: 12px;
+        HorizontalLayout {
+            spacing: 12px;
+            VerticalLayout {
+                spacing: 4px;
+                horizontal-stretch: 1;
+                Text {
+                    text: QuizStore.title;
+                    font-size: Theme.font-title;
+                    font-weight: 700;
+                    color: Theme.text;
+                }
+                Text {
+                    text: QuizStore.subtitle;
+                    color: Theme.muted;
+                    wrap: word-wrap;
+                }
+            }
+            VerticalLayout {
+                alignment: start;
+                Button {
+                    text: "Saltar";
+                    clicked => {
+                        QuizStore.skip();
+                    }
+                }
+            }
+        }
+        HorizontalLayout {
+            alignment: center;
+            QuizStepper {
+                steps: QuizStore.steps;
+                current: QuizStore.current;
+                clicked(i) => {
+                    QuizStore.go-to-group(i);
+                }
+            }
+        }
+        ScrollView {
+            vertical-stretch: 1;
+            VerticalLayout {
+                spacing: 10px;
+                padding-right: 12px;
+                alignment: start;
+                for row[i] in QuizStore.rows: QuestionRow {
+                    question: row;
+                    select(p) => {
+                        QuizStore.select(i, p);
+                    }
+                }
+            }
+        }
+        HorizontalLayout {
+            spacing: 10px;
+            if QuizStore.current > 0: Button {
+                text: "Anterior";
+                clicked => {
+                    QuizStore.previous-group();
+                }
+            }
+            Rectangle {
+                horizontal-stretch: 1;
+            }
+            Button {
+                text: QuizStore.current + 1 < QuizStore.steps.length ? "Siguiente" : "Continuar";
+                primary: true;
+                clicked => {
+                    QuizStore.next-group();
+                }
+            }
+        }
+    }
+}

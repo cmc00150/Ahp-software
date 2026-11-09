@@ -1,0 +1,124 @@
+// Start screen: method, new problem, load a file.
+import { Button } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { NavStore } from "../stores.slint";
+
+component MethodCard inherits Rectangle {
+    in property <string> title;
+    in property <string> description;
+    in property <bool> selected;
+    callback clicked;
+    width: 320px;
+    height: 150px;
+    border-radius: Theme.radius;
+    border-width: root.selected ? 2px : 1px;
+    border-color: root.selected ? Theme.accent : (touch.has-hover ? #9fb3d1 : Theme.border);
+    background: root.selected ? Theme.accent-soft : Theme.surface;
+    VerticalLayout {
+        padding: 18px;
+        spacing: 8px;
+        alignment: start;
+        HorizontalLayout {
+            spacing: 10px;
+            Rectangle {
+                y: (parent.height - self.height) / 2;
+                width: 18px;
+                height: 18px;
+                border-radius: 9px;
+                border-width: 2px;
+                border-color: root.selected ? Theme.accent : Theme.muted;
+                Rectangle {
+                    visible: root.selected;
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 4px;
+                    background: Theme.accent;
+                }
+            }
+            Text {
+                text: root.title;
+                font-size: 18px;
+                font-weight: 700;
+                color: Theme.text;
+                horizontal-stretch: 1;
+            }
+        }
+        Text {
+            text: root.description;
+            color: Theme.muted;
+            wrap: word-wrap;
+        }
+    }
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+}
+
+export component StartPage {
+    VerticalLayout {
+        alignment: center;
+        padding: 40px;
+        spacing: 28px;
+        VerticalLayout {
+            spacing: 8px;
+            Text {
+                text: "Proceso Analítico Jerárquico";
+                font-size: 30px;
+                font-weight: 800;
+                color: Theme.text;
+                horizontal-alignment: center;
+            }
+            Text {
+                text: "Elige el método y crea un problema nuevo o carga un fichero .ahp.";
+                color: Theme.muted;
+                horizontal-alignment: center;
+            }
+        }
+        HorizontalLayout {
+            alignment: center;
+            spacing: 20px;
+            MethodCard {
+                title: "AHP clásico";
+                description: "Ordena las alternativas comparando por pares los criterios y las alternativas bajo cada criterio.";
+                selected: NavStore.classic;
+                clicked => {
+                    NavStore.set-classic(true);
+                }
+            }
+            MethodCard {
+                title: "AHPSort II";
+                description: "Clasifica las alternativas en categorías comparando puntos del rango de cada criterio y perfiles.";
+                selected: !NavStore.classic;
+                clicked => {
+                    NavStore.set-classic(false);
+                }
+            }
+        }
+        HorizontalLayout {
+            alignment: center;
+            spacing: 12px;
+            Button {
+                text: "Nuevo problema";
+                primary: true;
+                clicked => {
+                    NavStore.new-problem();
+                }
+            }
+            Button {
+                text: "Cargar archivo .ahp";
+                clicked => {
+                    NavStore.load-file();
+                }
+            }
+            if NavStore.has-project: Button {
+                text: "Continuar con el problema actual";
+                clicked => {
+                    NavStore.go-to(1);
+                }
+            }
+        }
+    }
+}

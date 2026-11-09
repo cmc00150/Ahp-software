@@ -1,0 +1,68 @@
+// Screen 1: data table (rows = alternatives, columns = criteria).
+import { Button } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { DataStore, NavStore } from "../stores.slint";
+import { Card, ErrorText, PageTitle } from "../components/common.slint";
+import { EditableTable } from "../components/editable_table.slint";
+
+export component DataPage {
+    VerticalLayout {
+        padding: 20px;
+        spacing: 12px;
+        PageTitle {
+            title: "Datos del problema";
+            subtitle: "Cada fila es una alternativa y cada columna un criterio. Edita los nombres, las unidades y los valores.";
+        }
+        Card {
+            vertical-stretch: 1;
+            EditableTable {
+                columns: DataStore.columns;
+                rows: DataStore.rows;
+                column-renamed(c, t) => {
+                    DataStore.rename-criterion(c, t);
+                }
+                unit-changed(c, t) => {
+                    DataStore.set-unit(c, t);
+                }
+                row-renamed(r, t) => {
+                    DataStore.rename-alternative(r, t);
+                }
+                cell-edited(r, c, t) => {
+                    DataStore.set-value(r, c, t);
+                }
+                add-column => {
+                    DataStore.add-criterion();
+                }
+                remove-column(c) => {
+                    DataStore.remove-criterion(c);
+                }
+                add-row => {
+                    DataStore.add-alternative();
+                }
+                remove-row(r) => {
+                    DataStore.remove-alternative(r);
+                }
+            }
+        }
+        ErrorText {
+            text: DataStore.errors;
+        }
+        HorizontalLayout {
+            alignment: end;
+            spacing: 10px;
+            if DataStore.can-jump-to-result: Button {
+                text: "Ir al resultado";
+                clicked => {
+                    DataStore.jump-to-result();
+                }
+            }
+            Button {
+                text: "Continuar";
+                primary: true;
+                clicked => {
+                    NavStore.next();
+                }
+            }
+        }
+    }
+}

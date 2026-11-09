@@ -1,0 +1,32 @@
+// Placeholder for the AHPSort II flow (implemented in a later task).
+import { Button } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { NavStore } from "../stores.slint";
+
+export component ComingSoonPage {
+    VerticalLayout {
+        alignment: center;
+        spacing: 16px;
+        Text {
+            text: "AHPSort II";
+            font-size: 26px;
+            font-weight: 800;
+            color: Theme.text;
+            horizontal-alignment: center;
+        }
+        Text {
+            text: "Próximamente. Vuelve al inicio y elige AHP clásico para resolver el problema.";
+            color: Theme.muted;
+            horizontal-alignment: center;
+        }
+        HorizontalLayout {
+            alignment: center;
+            Button {
+                text: "Volver al inicio";
+                clicked => {
+                    NavStore.go-to(0);
+                }
+            }
+        }
+    }
+}

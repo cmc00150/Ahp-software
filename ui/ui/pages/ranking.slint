@@ -1,0 +1,83 @@
+// Screen 4: final ranking, the first items drawn bigger.
+import { ScrollView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { RankItem, RankingStore } from "../stores.slint";
+import { PageTitle } from "../components/common.slint";
+
+component RankCard inherits Rectangle {
+    in property <RankItem> item;
+    property <float> s: root.item.scale;
+    background: root.item.position == 1 ? Theme.accent-soft : Theme.surface;
+    border-radius: Theme.radius * root.s;
+    border-width: root.item.position == 1 ? 2px : 1px;
+    border-color: root.item.position == 1 ? Theme.accent : Theme.border;
+    HorizontalLayout {
+        padding: 12px * root.s;
+        spacing: 16px * root.s;
+        Text {
+            width: 56px * root.s;
+            text: root.item.position + "º";
+            font-size: 22px * root.s;
+            font-weight: 800;
+            color: Theme.accent;
+            vertical-alignment: center;
+            horizontal-alignment: center;
+        }
+        VerticalLayout {
+            spacing: 6px * root.s;
+            alignment: center;
+            horizontal-stretch: 1;
+            Text {
+                text: root.item.name;
+                font-size: 18px * root.s;
+                font-weight: 700;
+                color: Theme.text;
+                overflow: elide;
+            }
+            Rectangle {
+                height: 8px * root.s;
+                border-radius: self.height / 2;
+                background: Theme.surface-alt;
+                Rectangle {
+                    x: 0px;
+                    width: parent.width * root.item.share;
+                    border-radius: self.height / 2;
+                    background: Theme.accent;
+                }
+            }
+        }
+        Text {
+            text: root.item.score;
+            font-size: 18px * root.s;
+            font-weight: 600;
+            color: Theme.text;
+            vertical-alignment: center;
+        }
+    }
+}
+
+export component RankingPage {
+    VerticalLayout {
+        padding: 20px;
+        spacing: 12px;
+        PageTitle {
+            title: "Ranking";
+            subtitle: "Prioridad global de cada alternativa, de mayor a menor.";
+        }
+        ScrollView {
+            vertical-stretch: 1;
+            HorizontalLayout {
+                alignment: center;
+                VerticalLayout {
+                    width: 720px;
+                    spacing: 16px;
+                    padding: 8px;
+                    alignment: start;
+                    for item in RankingStore.items: RankCard {
+                        item: item;
+                    }
+                }
+            }
+        }
+    }
+}

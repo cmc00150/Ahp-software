@@ -1,0 +1,133 @@
+// Application shell: top bar (Atrás, file, Guardar), step header, message bar and the
+// current screen.
+import { Button, Palette } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+import { NavStore, DataStore, QuizStore, MatrixStore, RankingStore } from "stores.slint";
+import { MessageBanner, StepHeader } from "components/common.slint";
+import { StartPage } from "pages/start.slint";
+import { DataPage } from "pages/data.slint";
+import { QuizPage } from "pages/quiz.slint";
+import { MatricesPage } from "pages/matrices.slint";
+import { RankingPage } from "pages/ranking.slint";
+import { ComingSoonPage } from "pages/coming_soon.slint";
+
+export { NavStore, DataStore, QuizStore, MatrixStore, RankingStore }
+
+export component AppWindow inherits Window {
+    title: NavStore.file-name == "" ? "AHP" : "AHP — " + NavStore.file-name;
+    preferred-width: 1100px;
+    preferred-height: 750px;
+    min-width: 860px;
+    min-height: 560px;
+    background: Theme.background;
+    default-font-size: Theme.font-body;
+
+    init => {
+        Palette.color-scheme = ColorScheme.light;
+    }
+
+    VerticalLayout {
+        // Top bar.
+        Rectangle {
+            height: 56px;
+            background: Theme.surface;
+            HorizontalLayout {
+                padding-left: 16px;
+                padding-right: 16px;
+                padding-top: 12px;
+                padding-bottom: 12px;
+                spacing: 12px;
+                if NavStore.screen > 0: Button {
+                    text: "Atrás";
+                    clicked => {
+                        NavStore.back();
+                    }
+                }
+                Text {
+                    text: "AHP";
+                    font-size: 20px;
+                    font-weight: 800;
+                    color: Theme.accent;
+                    vertical-alignment: center;
+                }
+                Text {
+                    text: (NavStore.classic ? "AHP clásico" : "AHPSort II") + (NavStore.file-name == "" ? "" : " · " + NavStore.file-name);
+                    color: Theme.muted;
+                    vertical-alignment: center;
+                    overflow: elide;
+                    horizontal-stretch: 1;
+                }
+                Button {
+                    text: "Guardar";
+                    enabled: NavStore.has-project;
+                    clicked => {
+                        NavStore.save();
+                    }
+                }
+            }
+            Rectangle {
+                y: parent.height - 1px;
+                height: 1px;
+                background: Theme.border;
+            }
+        }
+
+        // Steps of the flow.
+        if NavStore.screen > 0: Rectangle {
+            height: 50px;
+            background: Theme.surface-alt;
+            StepHeader {
+                y: (parent.height - self.preferred-height) / 2;
+                height: self.preferred-height;
+                width: parent.width;
+                steps: ["Datos", "Cuestionarios", "Matrices", "Ranking"];
+                current: NavStore.screen - 1;
+                max-reached: NavStore.max-reached - 1;
+                clicked(i) => {
+                    NavStore.go-to(i + 1);
+                }
+            }
+            Rectangle {
+                y: parent.height - 1px;
+                height: 1px;
+                background: Theme.border;
+            }
+        }
+
+        MessageBanner {
+            text: NavStore.message;
+            is-error: NavStore.message-is-error;
+            dismissed => {
+                NavStore.dismiss-message();
+            }
+        }
+
+        Rectangle {
+            vertical-stretch: 1;
+            if NavStore.screen == 0: StartPage {
+                width: parent.width;
+                height: parent.height;
+            }
+            if NavStore.screen == 1 && NavStore.classic: DataPage {
+                width: parent.width;
+                height: parent.height;
+            }
+            if NavStore.screen == 2 && NavStore.classic: QuizPage {
+                width: parent.width;
+                height: parent.height;
+            }
+            if NavStore.screen == 3 && NavStore.classic: MatricesPage {
+                width: parent.width;
+                height: parent.height;
+            }
+            if NavStore.screen == 4 && NavStore.classic: RankingPage {
+                width: parent.width;
+                height: parent.height;
+            }
+            if NavStore.screen > 0 && !NavStore.classic: ComingSoonPage {
+                width: parent.width;
+                height: parent.height;
+            }
+        }
+    }
+}

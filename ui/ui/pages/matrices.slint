@@ -1,0 +1,42 @@
+// Screen 3: pairwise matrices with live weights.
+import { Button, ScrollView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { MatrixStore, NavStore } from "../stores.slint";
+import { PageTitle } from "../components/common.slint";
+import { MatrixCard } from "../components/matrix_card.slint";
+
+export component MatricesPage {
+    VerticalLayout {
+        padding: 20px;
+        spacing: 12px;
+        PageTitle {
+            title: "Matrices de comparación";
+            subtitle: "Puedes editar las celdas fuera de la diagonal (por ejemplo 3, 0.25 o 1/3); la recíproca y los pesos se actualizan al pulsar Intro o salir de la celda.";
+        }
+        ScrollView {
+            vertical-stretch: 1;
+            VerticalLayout {
+                spacing: 14px;
+                padding-right: 12px;
+                alignment: start;
+                for card[k] in MatrixStore.cards: MatrixCard {
+                    data: card;
+                    stats: MatrixStore.stats[k];
+                    edit(i, j, t) => {
+                        MatrixStore.edit(k, i, j, t);
+                    }
+                }
+            }
+        }
+        HorizontalLayout {
+            alignment: end;
+            Button {
+                text: "Continuar";
+                primary: true;
+                clicked => {
+                    NavStore.next();
+                }
+            }
+        }
+    }
+}

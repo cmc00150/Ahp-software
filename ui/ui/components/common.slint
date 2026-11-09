@@ -1,0 +1,180 @@
+// Small building blocks shared by every screen.
+import { Theme } from "../theme.slint";
+
+// White rounded panel; children are laid out vertically.
+export component Card inherits Rectangle {
+    in property <length> inner-padding: 16px;
+    in property <length> inner-spacing: 10px;
+    background: Theme.surface;
+    border-radius: Theme.radius;
+    border-width: 1px;
+    border-color: Theme.border;
+    VerticalLayout {
+        padding: root.inner-padding;
+        spacing: root.inner-spacing;
+        @children
+    }
+}
+
+// Title and explanation at the top of a page.
+export component PageTitle inherits VerticalLayout {
+    in property <string> title;
+    in property <string> subtitle;
+    spacing: 4px;
+    Text {
+        text: root.title;
+        font-size: Theme.font-title;
+        font-weight: 700;
+        color: Theme.text;
+    }
+    if root.subtitle != "": Text {
+        text: root.subtitle;
+        font-size: Theme.font-body;
+        color: Theme.muted;
+        wrap: word-wrap;
+    }
+}
+
+// Inline error text (hidden when empty).
+export component ErrorText inherits Rectangle {
+    in property <string> text;
+    visible: root.text != "";
+    height: root.text != "" ? label.preferred-height + 16px : 0px;
+    background: Theme.danger-soft;
+    border-radius: 6px;
+    label := Text {
+        x: 10px;
+        width: parent.width - 20px;
+        text: root.text;
+        color: Theme.danger;
+        wrap: word-wrap;
+        vertical-alignment: center;
+    }
+}
+
+// Small square "x" button used to remove rows and columns.
+export component RemoveButton inherits Rectangle {
+    in property <bool> enabled: true;
+    in property <string> tooltip;
+    callback clicked;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: touch.has-hover && root.enabled ? Theme.danger-soft : transparent;
+    Text {
+        text: "×";
+        font-size: 18px;
+        color: root.enabled ? (touch.has-hover ? Theme.danger : Theme.muted) : Theme.border;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: root.enabled ? pointer : default;
+        clicked => {
+            root.clicked();
+        }
+    }
+}
+
+// Triangular arrow button (left or right).
+export component ArrowButton inherits Rectangle {
+    in property <bool> left;
+    in property <bool> enabled: true;
+    callback clicked;
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
+    background: touch.pressed ? Theme.accent-soft : (touch.has-hover && root.enabled ? Theme.surface-alt : transparent);
+    Path {
+        width: 12px;
+        height: 12px;
+        viewbox-width: 12;
+        viewbox-height: 12;
+        fill: root.enabled ? Theme.accent : Theme.border;
+        commands: root.left ? "M 10 0 L 1 6 L 10 12 Z" : "M 2 0 L 11 6 L 2 12 Z";
+    }
+    touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: root.enabled ? pointer : default;
+        clicked => {
+            root.clicked();
+        }
+    }
+}
+
+// Global message bar (errors and confirmations).
+export component MessageBanner inherits Rectangle {
+    in property <string> text;
+    in property <bool> is-error;
+    callback dismissed;
+    visible: root.text != "";
+    height: root.text != "" ? max(40px, label.preferred-height + 16px) : 0px;
+    background: root.is-error ? Theme.danger-soft : #e7f6ec;
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 8px;
+        spacing: 8px;
+        label := Text {
+            text: root.text;
+            color: root.is-error ? Theme.danger : Theme.success;
+            wrap: word-wrap;
+            vertical-alignment: center;
+            horizontal-stretch: 1;
+        }
+        RemoveButton {
+            y: (parent.height - self.height) / 2;
+            clicked => {
+                root.dismissed();
+            }
+        }
+    }
+}
+
+// Horizontal list of the steps of a flow; reached steps are clickable.
+export component StepHeader inherits HorizontalLayout {
+    in property <[string]> steps;
+    in property <int> current;
+    in property <int> max-reached;
+    callback clicked(int);
+    spacing: 6px;
+    alignment: center;
+    for step[i] in root.steps: Rectangle {
+        property <bool> active: i == root.current;
+        property <bool> reachable: i <= root.max-reached;
+        height: 34px;
+        border-radius: 17px;
+        background: self.active ? Theme.accent : (touch.has-hover && self.reachable ? Theme.accent-soft : transparent);
+        HorizontalLayout {
+            padding-left: 6px;
+            padding-right: 14px;
+            spacing: 8px;
+            Rectangle {
+                y: (parent.height - self.height) / 2;
+                width: 22px;
+                height: 22px;
+                border-radius: 11px;
+                background: active ? Theme.surface : (reachable ? Theme.accent : Theme.border);
+                Text {
+                    text: i + 1;
+                    font-size: Theme.font-small;
+                    font-weight: 700;
+                    color: active ? Theme.accent : Theme.surface;
+                }
+            }
+            Text {
+                text: step;
+                vertical-alignment: center;
+                font-weight: active ? 700 : 500;
+                color: active ? Theme.surface : (reachable ? Theme.text : Theme.muted);
+            }
+        }
+        touch := TouchArea {
+            enabled: reachable && !active;
+            mouse-cursor: self.enabled ? pointer : default;
+            clicked => {
+                root.clicked(i);
+            }
+        }
+    }
+}

@@ -339,3 +339,36 @@ fn solve_rejects_evaluations_of_the_wrong_shape() {
         Err(ProjectError::Invalid(_))
     ));
 }
+
+#[test]
+fn solve_rejects_non_finite_or_out_of_scale_evaluations() {
+    let p = example("coches.ahp");
+    let (ev, _) = Evaluations::from_project(&p, Method::Classic).unwrap();
+    for bad in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 0.0, 0.5, -0.99] {
+        let mut criteria_bad = ev.clone();
+        criteria_bad.criteria[0] = bad;
+        assert!(
+            matches!(
+                solve_classic(&p, &criteria_bad),
+                Err(ProjectError::Invalid(_))
+            ),
+            "criteria value {bad} must be rejected"
+        );
+        let mut alt_bad = ev.clone();
+        alt_bad.per_criterion[2][1] = bad;
+        assert!(
+            matches!(solve_classic(&p, &alt_bad), Err(ProjectError::Invalid(_))),
+            "alternative value {bad} must be rejected"
+        );
+    }
+
+    let short = example("londres.ahp");
+    let mut ev = Evaluations::defaults(&short, Method::ShortII);
+    ev.per_criterion[0][0] = f64::NAN;
+    assert!(matches!(
+        solve_short(&short, &ev),
+        Err(ProjectError::Invalid(_))
+    ));
+    let (valid, _) = Evaluations::from_project(&p, Method::Classic).unwrap();
+    assert!(solve_classic(&p, &valid).is_ok());
+}

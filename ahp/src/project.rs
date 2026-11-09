@@ -706,6 +706,16 @@ fn check_evaluations(
             )));
         }
     }
+    // Values must be valid signed Saaty values (finite, |x| >= 1): anything else would be
+    // silently turned into "equal" or produce NaN weights.
+    check_signed(
+        "las evaluaciones de los criterios",
+        Some(&ev.criteria),
+        ev.criteria.len(),
+    )?;
+    for ((name, _), v) in per_criterion.iter().zip(&ev.per_criterion) {
+        check_signed(&format!("las evaluaciones de \"{name}\""), Some(v), v.len())?;
+    }
     Ok(())
 }
 
