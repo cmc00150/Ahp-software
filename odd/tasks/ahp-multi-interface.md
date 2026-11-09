@@ -117,6 +117,7 @@ for matrix edits); a quiz shows the nearest Saaty integer.
 - T3: delegated writer (first one stopped by accident, resumed by a fresh writer that kept its work); `cargo test --workspace` → 42 + 15 + 13 + 21 passed (parent spot check); clippy clean in ui; fmt clean; launch smoke exit 124 (window up). R3-001 lib follow-up fixed (check_signed in check_evaluations).
 - T3 commit `60131d7`. T3 review: medium, granted, lens reliability → approved + acknowledged (lineage review-ca5b87f5a066b819). Advisory follow-ups: R3-001 rejected matrix cell can show as valid after another edit (ui/src/models.rs update_matrix); R3-002 save ignores invalid data cells (writes previous value silently); R3-003 missing CLI test for save-after-solve.
 - T4: delegated writer; `cargo test --workspace` → 42 + 15 + 13 + 41 passed (parent spot check); clippy clean in ui; fmt clean; smoke exit 124 with londres.ahp. Includes T3 review fixes R3-001 (rejected matrix cell restored) and R3-002 (save refused while cells are invalid). Extra correctness fix: range answers remapped to their pairs when range points reorder.
+- T4 commit `14b3b58`. T4 review: medium, granted, lens reliability → approved + acknowledged (lineage review-513c20f83231e159). Advisory follow-ups: R3-001 can_jump_to_result computed before profile padding on load; R3-002 rename_category accepts empty/duplicate names (classification looks up by name); R3-003 ProfilesStore in-place update paths untested.
 - Delivery strategy: ask-on-risk → user chose `feature-branch-chain`.
 
 ## Next step
