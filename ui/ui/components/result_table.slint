@@ -1,0 +1,79 @@
+// Read-only table of priorities: a name column, one column per criterion and a final
+// highlighted "Global" column.
+import { Theme } from "../theme.slint";
+import { ResultRow } from "../stores.slint";
+
+component Cell inherits Text {
+    vertical-alignment: center;
+    overflow: elide;
+}
+
+export component ResultTable inherits VerticalLayout {
+    in property <string> name-header;
+    in property <[string]> headers;
+    in property <string> total-header: "Global";
+    in property <[ResultRow]> rows;
+    in property <length> name-width: 180px;
+    in property <length> cell-width: 130px;
+    in property <length> row-height: 32px;
+    in property <length> gap: 16px;
+    spacing: 0px;
+    alignment: start;
+
+    HorizontalLayout {
+        height: root.row-height;
+        alignment: start;
+        spacing: root.gap;
+        Cell {
+            width: root.name-width;
+            text: root.name-header;
+            font-weight: 700;
+            color: Theme.muted;
+        }
+        for header in root.headers: Cell {
+            width: root.cell-width;
+            text: header;
+            font-weight: 700;
+            color: Theme.muted;
+            horizontal-alignment: right;
+        }
+        Cell {
+            width: root.cell-width;
+            text: root.total-header;
+            font-weight: 800;
+            color: Theme.accent;
+            horizontal-alignment: right;
+        }
+    }
+    Rectangle {
+        height: 1px;
+        background: Theme.border;
+    }
+    for row[r] in root.rows: Rectangle {
+        height: root.row-height;
+        background: mod(r, 2) == 0 ? Theme.surface : Theme.surface-alt;
+        HorizontalLayout {
+            alignment: start;
+            spacing: root.gap;
+            Cell {
+                width: root.name-width;
+                text: row.name;
+                font-weight: 600;
+                color: Theme.text;
+            }
+            for value in row.cells: Cell {
+                width: root.cell-width;
+                text: value;
+                color: Theme.text;
+                horizontal-alignment: right;
+            }
+            Cell {
+                width: root.cell-width;
+                text: row.total;
+                font-weight: 700;
+                color: Theme.accent;
+                horizontal-alignment: right;
+            }
+        }
+    }
+}

@@ -1,0 +1,169 @@
+// AHPSort II local priorities of one criterion: table X (original value) / Y (priority) of
+// its range points, ascending by value, and the line chart of those points. The geometry
+// (path commands, tick positions) comes from Rust in plot-box coordinates.
+import { Theme } from "../theme.slint";
+import { LocalTable } from "../stores.slint";
+import { Card } from "common.slint";
+
+export global LocalLayout {
+    out property <length> label-width: 56px;
+    out property <length> value-width: 100px;
+    out property <length> row-height: 22px;
+    // Room for the Y tick labels (left) and the X tick labels (below).
+    out property <length> y-axis-width: 46px;
+    out property <length> x-axis-height: 20px;
+}
+
+export component LineChart inherits Rectangle {
+    in property <LocalTable> data;
+    property <length> plot-w: root.data.plot-width * 1px;
+    property <length> plot-h: root.data.plot-height * 1px;
+    width: LocalLayout.y-axis-width + self.plot-w + 8px;
+    height: self.plot-h + LocalLayout.x-axis-height;
+
+    // Plot box with the axes on its left and bottom sides.
+    Rectangle {
+        x: LocalLayout.y-axis-width;
+        y: 0px;
+        width: root.plot-w;
+        height: root.plot-h;
+        background: Theme.surface-alt;
+        for tick in root.data.y-ticks: Rectangle {
+            y: tick.pos * 1px;
+            height: 1px;
+            background: Theme.border;
+        }
+        Rectangle {
+            x: 0px;
+            width: 1px;
+            background: Theme.muted;
+        }
+        Rectangle {
+            y: parent.height - 1px;
+            height: 1px;
+            background: Theme.muted;
+        }
+        Path {
+            width: parent.width;
+            height: parent.height;
+            viewbox-width: root.data.plot-width;
+            viewbox-height: root.data.plot-height;
+            commands: root.data.line;
+            stroke: Theme.accent;
+            stroke-width: 2px;
+        }
+        Path {
+            width: parent.width;
+            height: parent.height;
+            viewbox-width: root.data.plot-width;
+            viewbox-height: root.data.plot-height;
+            commands: root.data.markers;
+            fill: Theme.accent;
+        }
+    }
+    for tick in root.data.y-ticks: Text {
+        x: 0px;
+        y: tick.pos * 1px - self.height / 2;
+        width: LocalLayout.y-axis-width - 4px;
+        text: tick.label;
+        font-size: 10px;
+        color: Theme.muted;
+        horizontal-alignment: right;
+    }
+    for tick in root.data.x-ticks: Text {
+        x: LocalLayout.y-axis-width + tick.pos * 1px - self.width / 2;
+        y: root.plot-h + 3px;
+        width: 64px;
+        text: tick.label;
+        font-size: 10px;
+        color: Theme.muted;
+        horizontal-alignment: center;
+    }
+}
+
+component HeadCell inherits Text {
+    font-weight: 700;
+    font-size: Theme.font-small;
+    color: Theme.muted;
+    vertical-alignment: center;
+}
+
+export component LocalPriorityCard inherits Card {
+    in property <LocalTable> data;
+    inner-padding: 12px;
+    inner-spacing: 8px;
+
+    Text {
+        text: root.data.title;
+        font-size: Theme.font-h2;
+        font-weight: 700;
+        color: Theme.text;
+        overflow: elide;
+    }
+    Text {
+        text: root.data.unit == "" ? " " : "X en " + root.data.unit;
+        font-size: Theme.font-small;
+        color: Theme.muted;
+        overflow: elide;
+    }
+    VerticalLayout {
+        spacing: 0px;
+        HorizontalLayout {
+            height: LocalLayout.row-height;
+            alignment: start;
+            HeadCell {
+                width: LocalLayout.label-width;
+                text: "Punto";
+            }
+            HeadCell {
+                width: LocalLayout.value-width;
+                text: "X";
+                horizontal-alignment: right;
+            }
+            HeadCell {
+                width: LocalLayout.value-width;
+                text: "Y";
+                horizontal-alignment: right;
+            }
+        }
+        for row[r] in root.data.rows: Rectangle {
+            height: LocalLayout.row-height;
+            background: mod(r, 2) == 0 ? Theme.surface-alt : Theme.surface;
+            HorizontalLayout {
+                alignment: start;
+                Text {
+                    width: LocalLayout.label-width;
+                    text: row.label;
+                    font-weight: 600;
+                    color: Theme.text;
+                    vertical-alignment: center;
+                }
+                Text {
+                    width: LocalLayout.value-width;
+                    text: row.x;
+                    color: Theme.text;
+                    horizontal-alignment: right;
+                    vertical-alignment: center;
+                }
+                Text {
+                    width: LocalLayout.value-width;
+                    text: row.y;
+                    font-weight: 600;
+                    color: Theme.accent;
+                    horizontal-alignment: right;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+    HorizontalLayout {
+        alignment: center;
+        LineChart {
+            data: root.data;
+        }
+    }
+    // Takes any extra height of the card.
+    Rectangle {
+        vertical-stretch: 1;
+    }
+}

@@ -1,17 +1,84 @@
-// Screen 3: pairwise matrices with live weights.
+// Screen 3: pairwise matrices with live weights. For AHPSort II, "Detalles prioridad local"
+// opens an overlay with the local-priority table and chart of every criterion.
 import { Button, ScrollView } from "std-widgets.slint";
 import { Theme } from "../theme.slint";
-import { MatrixStore, NavStore } from "../stores.slint";
-import { PageTitle } from "../components/common.slint";
+import { LocalStore, MatrixStore, NavStore } from "../stores.slint";
+import { Card, PageTitle } from "../components/common.slint";
 import { MatrixCard } from "../components/matrix_card.slint";
+import { LocalPriorityCard } from "../components/local_priority.slint";
+
+// Local-priority cards laid out in rows, wrapping when they do not fit horizontally.
+component LocalDetails inherits Card {
+    callback close();
+    property <length> tile-width: 310px;
+    property <length> gap: 12px;
+    // Every table has the same number of points, so every card has the same height.
+    property <length> tile-height: 280px + LocalStore.tables[0].rows.length * 22px;
+
+    HorizontalLayout {
+        spacing: 12px;
+        VerticalLayout {
+            horizontal-stretch: 1;
+            spacing: 2px;
+            Text {
+                text: "Prioridades locales de los puntos del rango";
+                font-size: Theme.font-h2;
+                font-weight: 700;
+                color: Theme.text;
+            }
+            Text {
+                text: "X: valor original de cada punto (RP y perfiles), en orden ascendente. Y: su prioridad local." + (LocalStore.legend == "" ? "" : "  " + LocalStore.legend);
+                color: Theme.muted;
+                wrap: word-wrap;
+            }
+        }
+        VerticalLayout {
+            alignment: start;
+            Button {
+                text: "Cerrar";
+                clicked => {
+                    root.close();
+                }
+            }
+        }
+    }
+    sv := ScrollView {
+        vertical-stretch: 1;
+        property <int> per-row: max(1, floor((self.width - 16px) / (root.tile-width + root.gap)));
+        content-width: max(self.width - 16px, root.tile-width);
+        content-height: ceil(LocalStore.tables.length / self.per-row) * (root.tile-height + root.gap);
+        for table[k] in LocalStore.tables: LocalPriorityCard {
+            x: mod(k, sv.per-row) * (root.tile-width + root.gap);
+            y: floor(k / sv.per-row) * (root.tile-height + root.gap);
+            width: root.tile-width;
+            height: root.tile-height;
+            data: table;
+        }
+    }
+}
 
 export component MatricesPage {
+    property <bool> show-details: false;
+
     VerticalLayout {
         padding: 20px;
         spacing: 12px;
-        PageTitle {
-            title: "Matrices de comparación";
-            subtitle: "Puedes editar las celdas fuera de la diagonal (por ejemplo 3, 0.25 o 1/3); la recíproca y los pesos se actualizan al pulsar Intro o salir de la celda.";
+        HorizontalLayout {
+            spacing: 12px;
+            PageTitle {
+                horizontal-stretch: 1;
+                title: "Matrices de comparación";
+                subtitle: "Puedes editar las celdas fuera de la diagonal (por ejemplo 3, 0.25 o 1/3); la recíproca y los pesos se actualizan al pulsar Intro o salir de la celda.";
+            }
+            if !NavStore.classic: VerticalLayout {
+                alignment: start;
+                Button {
+                    text: "Detalles prioridad local";
+                    clicked => {
+                        root.show-details = true;
+                    }
+                }
+            }
         }
         ScrollView {
             vertical-stretch: 1;
@@ -36,6 +103,21 @@ export component MatricesPage {
                 clicked => {
                     NavStore.next();
                 }
+            }
+        }
+    }
+
+    if root.show-details: Rectangle {
+        background: #0f172a66;
+        // Swallows clicks so the matrices below cannot be edited while the overlay is open.
+        TouchArea { }
+        LocalDetails {
+            x: 24px;
+            y: 16px;
+            width: parent.width - 48px;
+            height: parent.height - 32px;
+            close => {
+                root.show-details = false;
             }
         }
     }

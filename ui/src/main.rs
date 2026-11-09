@@ -1,17 +1,19 @@
-//! `ahp-ui`: desktop application for classic AHP (and, later, AHPSort II) projects.
+//! `ahp-ui`: desktop application for classic AHP and AHPSort II projects.
 //!
 //! Usage: `ahp-ui [file.ahp]`.
 //!
 //! Layout: `state.rs` holds the application state and logic, `convert.rs` pure conversions,
-//! `models.rs` fills the Slint stores, and this file wires the Slint callbacks to them.
+//! `chart.rs` the local-priority chart geometry, `models.rs` fills the Slint stores, and this
+//! file wires the Slint callbacks to them.
 
+mod chart;
 mod convert;
 mod models;
 mod state;
 
 use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
-use ahp::Method;
+use ahp::{Method, ProfileType};
 use slint::ComponentHandle;
 
 use state::{AppState, Screen};
@@ -58,6 +60,11 @@ fn load(ui: &AppWindow, st: &mut AppState, path: PathBuf) {
 fn save(ui: &AppWindow, state: &Shared) {
     let (dir, name) = {
         let st = state.borrow();
+        // Same check as `save_to`, before asking for a file name.
+        if let Some(blocker) = st.save_blocker() {
+            models::show_message(ui, &blocker, true);
+            return;
+        }
         let file = st.file.clone();
         let dir = file
             .as_ref()
@@ -92,7 +99,7 @@ fn save(ui: &AppWindow, state: &Shared) {
 fn wire_navigation(ui: &AppWindow, state: &Shared) {
     let nav = ui.global::<NavStore>();
     nav.on_go_to(handler!(ui, state, |ui, st, index: i32| {
-        let result = match Screen::from_index(index) {
+        let result = match Screen::from_index(index, st.method) {
             Some(target) => st.navigate(target),
             None => Ok(()),
         };
@@ -156,15 +163,17 @@ fn wire_data(ui: &AppWindow, state: &Shared) {
     data.on_rename_criterion(handler!(
         ui,
         state,
-        |_ui, st, c: i32, text: slint::SharedString| {
+        |ui, st, c: i32, text: slint::SharedString| {
             st.rename_criterion(c as usize, &text);
+            models::update_profile_row_name(&ui, st, c as usize);
         }
     ));
     data.on_set_unit(handler!(
         ui,
         state,
-        |_ui, st, c: i32, text: slint::SharedString| {
+        |ui, st, c: i32, text: slint::SharedString| {
             st.set_unit(c as usize, &text);
+            models::update_profile_row_name(&ui, st, c as usize);
         }
     ));
     data.on_rename_alternative(handler!(
@@ -180,6 +189,10 @@ fn wire_data(ui: &AppWindow, state: &Shared) {
         |ui, st, a: i32, c: i32, text: slint::SharedString| {
             st.set_value(a as usize, c as usize, &text);
             models::update_data_cell(&ui, st, a as usize, c as usize);
+            if st.method == Method::ShortII {
+                // An automatic range follows the maximum of the values.
+                models::update_range(&ui, st, c as usize, None);
+            }
         }
     ));
     data.on_add_criterion(handler!(ui, state, |ui, st| {
@@ -202,6 +215,54 @@ fn wire_data(ui: &AppWindow, state: &Shared) {
         let result = st.jump_to_result();
         finish(&ui, st, result);
     }));
+}
+
+fn wire_profiles(ui: &AppWindow, state: &Shared) {
+    let profiles = ui.global::<ProfilesStore>();
+    profiles.on_set_limiting(handler!(ui, state, |ui, st, limiting: bool| {
+        st.set_profile_type(if limiting {
+            ProfileType::Limiting
+        } else {
+            ProfileType::Central
+        });
+        models::refresh(&ui, st);
+    }));
+    profiles.on_rename_category(handler!(
+        ui,
+        state,
+        |ui, st, k: i32, text: slint::SharedString| {
+            st.rename_category(k as usize, &text);
+            models::update_category_name(&ui, st);
+        }
+    ));
+    profiles.on_add_category(handler!(ui, state, |ui, st| {
+        st.add_category();
+        models::refresh(&ui, st);
+    }));
+    profiles.on_remove_category(handler!(ui, state, |ui, st, k: i32| {
+        st.remove_category(k as usize);
+        models::refresh(&ui, st);
+    }));
+    profiles.on_set_range(handler!(
+        ui,
+        state,
+        |ui, st, c: i32, text: slint::SharedString| {
+            st.set_range(c as usize, &text);
+            models::update_range(&ui, st, c as usize, Some(&text));
+        }
+    ));
+    profiles.on_set_range_auto(handler!(ui, state, |ui, st, c: i32| {
+        st.set_range_auto(c as usize);
+        models::update_range(&ui, st, c as usize, None);
+    }));
+    profiles.on_set_profile(handler!(
+        ui,
+        state,
+        |ui, st, c: i32, k: i32, text: slint::SharedString| {
+            st.set_profile(c as usize, k as usize, &text);
+            models::update_profile_cell(&ui, st, c as usize, k as usize);
+        }
+    ));
 }
 
 fn wire_quiz(ui: &AppWindow, state: &Shared) {
@@ -239,10 +300,13 @@ fn wire_matrices(ui: &AppWindow, state: &Shared) {
                 Ok(()) => {
                     models::show_message(&ui, "", false);
                     models::update_matrix(&ui, st, card);
+                    if st.method == Method::ShortII {
+                        models::refresh_local(&ui, st);
+                    }
                 }
                 Err(e) => {
                     models::show_message(&ui, &e, true);
-                    models::mark_matrix_cell_invalid(&ui, card, i, j);
+                    models::mark_matrix_cell_invalid(&ui, card, i, j, &text);
                 }
             }
         }
@@ -255,6 +319,7 @@ fn main() -> Result<(), slint::PlatformError> {
 
     wire_navigation(&ui, &state);
     wire_data(&ui, &state);
+    wire_profiles(&ui, &state);
     wire_quiz(&ui, &state);
     wire_matrices(&ui, &state);
 

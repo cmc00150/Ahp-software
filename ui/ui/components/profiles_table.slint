@@ -1,0 +1,231 @@
+// AHPSort II profiles table: one row per criterion (same order as the data table), the range
+// [0 - max] of each criterion and one column per category with its profile value.
+import { Button, LineEdit, ScrollView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { ProfileColumn, ProfileRow, RangeCell } from "../stores.slint";
+import { RemoveButton } from "common.slint";
+import { CellInput, HeaderLabel } from "editable_table.slint";
+
+// Input whose text follows the model even after the user typed in it (the range maximum
+// changes when "Auto" is pressed or when the values of an automatic range change).
+component SyncedInput inherits Rectangle {
+    in property <string> model-text;
+    in property <bool> valid: true;
+    callback edited(string);
+    border-radius: 5px;
+    border-width: root.valid ? 0px : 2px;
+    border-color: Theme.danger;
+    background: root.valid ? transparent : Theme.danger-soft;
+    input := LineEdit {
+        width: parent.width;
+        height: parent.height;
+        text: root.model-text;
+        horizontal-alignment: right;
+        edited(t) => {
+            root.edited(t);
+        }
+    }
+    changed model-text => {
+        if input.text != root.model-text {
+            input.text = root.model-text;
+        }
+    }
+}
+
+// "[0 - max]" with the editable maximum and the "Auto" switch.
+component RangeEditor inherits HorizontalLayout {
+    in property <RangeCell> cell;
+    in property <length> input-width: 120px;
+    callback edited(string);
+    callback auto();
+    spacing: 4px;
+    Text {
+        text: "[0 -";
+        color: Theme.muted;
+        vertical-alignment: center;
+    }
+    SyncedInput {
+        width: root.input-width;
+        model-text: root.cell.text;
+        valid: root.cell.valid;
+        edited(t) => {
+            root.edited(t);
+        }
+    }
+    Text {
+        text: "]";
+        color: Theme.muted;
+        vertical-alignment: center;
+    }
+    // Highlighted while automatic; when manual, a click goes back to automatic.
+    Rectangle {
+        y: (parent.height - self.height) / 2;
+        width: 44px;
+        height: 24px;
+        border-radius: 12px;
+        border-width: 1px;
+        border-color: Theme.accent;
+        background: !root.cell.manual ? Theme.accent : (touch.has-hover ? Theme.accent-soft : transparent);
+        Text {
+            text: "Auto";
+            font-size: Theme.font-small;
+            font-weight: 600;
+            color: !root.cell.manual ? Theme.surface : Theme.accent;
+        }
+        touch := TouchArea {
+            enabled: root.cell.manual;
+            mouse-cursor: self.enabled ? pointer : default;
+            clicked => {
+                root.auto();
+            }
+        }
+    }
+}
+
+// Two-option switch (profile type).
+export component Segmented inherits HorizontalLayout {
+    in property <[string]> options;
+    in property <int> selected;
+    callback picked(int);
+    spacing: 0px;
+    for option[i] in root.options: Rectangle {
+        height: 30px;
+        width: max(90px, label.preferred-width + 24px);
+        border-radius: 6px;
+        border-width: 1px;
+        border-color: Theme.accent;
+        background: i == root.selected ? Theme.accent : (touch.has-hover ? Theme.accent-soft : Theme.surface);
+        label := Text {
+            text: option;
+            font-weight: 600;
+            color: i == root.selected ? Theme.surface : Theme.accent;
+        }
+        touch := TouchArea {
+            enabled: i != root.selected;
+            mouse-cursor: self.enabled ? pointer : default;
+            clicked => {
+                root.picked(i);
+            }
+        }
+    }
+}
+
+export component ProfilesTable {
+    in property <[ProfileColumn]> columns;
+    in property <[ProfileRow]> rows;
+    in property <[RangeCell]> ranges;
+    in property <length> cell-width: 130px;
+    in property <length> head-width: 190px;
+    in property <length> range-width: 230px;
+    in property <length> row-height: 34px;
+    callback category-renamed(int, string);
+    callback add-category();
+    callback remove-category(int);
+    callback range-edited(int, string);
+    callback range-auto(int);
+    // (criterion, profile, text)
+    callback profile-edited(int, int, string);
+
+    ScrollView {
+        VerticalLayout {
+            padding: 4px;
+            spacing: 6px;
+            alignment: start;
+
+            // Category names.
+            HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+                height: root.row-height;
+                HeaderLabel {
+                    width: root.head-width;
+                    text: "Criterio";
+                }
+                HeaderLabel {
+                    width: root.range-width;
+                    text: "Rango";
+                }
+                for col[k] in root.columns: HorizontalLayout {
+                    width: root.cell-width;
+                    spacing: 2px;
+                    CellInput {
+                        width: root.cell-width - 26px;
+                        text: col.name;
+                        placeholder: "Categoría";
+                        edited(t) => {
+                            root.category-renamed(k, t);
+                        }
+                    }
+                    RemoveButton {
+                        y: (parent.height - self.height) / 2;
+                        enabled: root.columns.length > 2;
+                        clicked => {
+                            root.remove-category(k);
+                        }
+                    }
+                }
+                Button {
+                    text: "+ Añadir categoría";
+                    clicked => {
+                        root.add-category();
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 1px;
+                background: Theme.border;
+            }
+
+            // One row per criterion.
+            for row[c] in root.rows: HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+                height: root.row-height;
+                Text {
+                    width: root.head-width;
+                    text: row.unit == "" ? row.name : row.name + " (" + row.unit + ")";
+                    font-weight: 600;
+                    color: Theme.text;
+                    vertical-alignment: center;
+                    overflow: elide;
+                }
+                RangeEditor {
+                    width: root.range-width;
+                    input-width: root.range-width - 100px;
+                    cell: root.ranges[c];
+                    edited(t) => {
+                        root.range-edited(c, t);
+                    }
+                    auto => {
+                        root.range-auto(c);
+                    }
+                }
+                for col[k] in root.columns: Rectangle {
+                    width: root.cell-width;
+                    if col.has-profile: CellInput {
+                        width: parent.width;
+                        height: parent.height;
+                        text: row.cells[k].text;
+                        valid: row.cells[k].valid;
+                        alignment: right;
+                        edited(t) => {
+                            root.profile-edited(c, k, t);
+                        }
+                    }
+                    if !col.has-profile: Rectangle {
+                        background: Theme.surface-alt;
+                        border-radius: 5px;
+                        border-width: 1px;
+                        border-color: Theme.border;
+                        Text {
+                            text: "sin perfil";
+                            color: Theme.muted;
+                            font-size: Theme.font-small;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

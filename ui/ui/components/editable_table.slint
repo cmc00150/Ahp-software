@@ -7,7 +7,7 @@ import { DataColumn, DataRow } from "../stores.slint";
 import { RemoveButton } from "common.slint";
 
 // Text input with a red frame when its content is not valid.
-component CellInput inherits Rectangle {
+export component CellInput inherits Rectangle {
     in property <string> text;
     in property <bool> valid: true;
     in property <string> placeholder;
@@ -29,7 +29,7 @@ component CellInput inherits Rectangle {
     }
 }
 
-component HeaderLabel inherits Text {
+export component HeaderLabel inherits Text {
     color: Theme.muted;
     font-size: Theme.font-small;
     font-weight: 600;

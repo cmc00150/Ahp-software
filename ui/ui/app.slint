@@ -2,16 +2,17 @@
 // current screen.
 import { Button, Palette } from "std-widgets.slint";
 import { Theme } from "theme.slint";
-import { NavStore, DataStore, QuizStore, MatrixStore, RankingStore } from "stores.slint";
+import { NavStore, DataStore, QuizStore, MatrixStore, RankingStore, ProfilesStore, LocalStore, PrioritiesStore, ClassificationStore } from "stores.slint";
 import { MessageBanner, StepHeader } from "components/common.slint";
 import { StartPage } from "pages/start.slint";
 import { DataPage } from "pages/data.slint";
 import { QuizPage } from "pages/quiz.slint";
 import { MatricesPage } from "pages/matrices.slint";
 import { RankingPage } from "pages/ranking.slint";
-import { ComingSoonPage } from "pages/coming_soon.slint";
+import { PrioritiesPage } from "pages/priorities.slint";
+import { ClassificationPage } from "pages/classification.slint";
 
-export { NavStore, DataStore, QuizStore, MatrixStore, RankingStore }
+export { NavStore, DataStore, QuizStore, MatrixStore, RankingStore, ProfilesStore, LocalStore, PrioritiesStore, ClassificationStore }
 
 export component AppWindow inherits Window {
     title: NavStore.file-name == "" ? "AHP" : "AHP — " + NavStore.file-name;
@@ -80,7 +81,7 @@ export component AppWindow inherits Window {
                 y: (parent.height - self.preferred-height) / 2;
                 height: self.preferred-height;
                 width: parent.width;
-                steps: ["Datos", "Cuestionarios", "Matrices", "Ranking"];
+                steps: NavStore.classic ? ["Datos", "Cuestionarios", "Matrices", "Ranking"] : ["Datos", "Cuestionarios", "Matrices", "Prioridades globales", "Clasificación"];
                 current: NavStore.screen - 1;
                 max-reached: NavStore.max-reached - 1;
                 clicked(i) => {
@@ -108,15 +109,16 @@ export component AppWindow inherits Window {
                 width: parent.width;
                 height: parent.height;
             }
-            if NavStore.screen == 1 && NavStore.classic: DataPage {
+            // Data, questionnaires and matrices serve both methods.
+            if NavStore.screen == 1: DataPage {
                 width: parent.width;
                 height: parent.height;
             }
-            if NavStore.screen == 2 && NavStore.classic: QuizPage {
+            if NavStore.screen == 2: QuizPage {
                 width: parent.width;
                 height: parent.height;
             }
-            if NavStore.screen == 3 && NavStore.classic: MatricesPage {
+            if NavStore.screen == 3: MatricesPage {
                 width: parent.width;
                 height: parent.height;
             }
@@ -124,7 +126,11 @@ export component AppWindow inherits Window {
                 width: parent.width;
                 height: parent.height;
             }
-            if NavStore.screen > 0 && !NavStore.classic: ComingSoonPage {
+            if NavStore.screen == 4 && !NavStore.classic: PrioritiesPage {
+                width: parent.width;
+                height: parent.height;
+            }
+            if NavStore.screen == 5 && !NavStore.classic: ClassificationPage {
                 width: parent.width;
                 height: parent.height;
             }

@@ -1,0 +1,134 @@
+// AHPSort II screen 5: category assigned to each alternative (read-only).
+import { ScrollView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { ClassificationStore, ClassRow } from "../stores.slint";
+import { Card, PageTitle } from "../components/common.slint";
+
+// Colours of the category tags, by category position.
+global TagColors {
+    out property <[color]> text: [#1d4ed8, #15803d, #b45309, #7c3aed, #be185d, #0e7490, #4d7c0f, #b91c1c];
+    out property <[color]> background: [#dbe7fd, #dcfce7, #fef3c7, #ede9fe, #fce7f3, #cffafe, #ecfccb, #fee2e2];
+}
+
+component CategoryTag inherits Rectangle {
+    in property <string> text;
+    in property <int> index;
+    property <int> slot: root.index < 0 ? 0 : mod(root.index, TagColors.text.length);
+    height: 26px;
+    width: label.preferred-width + 24px;
+    border-radius: 13px;
+    background: root.index < 0 ? Theme.surface-alt : TagColors.background[root.slot];
+    border-width: 1px;
+    border-color: root.index < 0 ? Theme.border : TagColors.text[root.slot];
+    label := Text {
+        text: root.text;
+        font-weight: 700;
+        color: root.index < 0 ? Theme.muted : TagColors.text[root.slot];
+    }
+}
+
+component Head inherits Text {
+    font-weight: 700;
+    color: Theme.muted;
+    vertical-alignment: center;
+}
+
+export component ClassificationPage {
+    property <length> name-width: 200px;
+    property <length> value-width: 200px;
+    property <length> row-height: 38px;
+    VerticalLayout {
+        padding: 20px;
+        spacing: 12px;
+        PageTitle {
+            title: "Clasificación";
+            subtitle: "Categoría asignada a cada alternativa comparando su prioridad global con la de los perfiles. «—»: la categoría no tiene perfil (la última, con perfiles límite).";
+        }
+        ScrollView {
+            vertical-stretch: 1;
+            HorizontalLayout {
+                alignment: start;
+                VerticalLayout {
+                    alignment: start;
+                    Card {
+                        VerticalLayout {
+                            spacing: 0px;
+                            alignment: start;
+                            HorizontalLayout {
+                                height: root.row-height;
+                                alignment: start;
+                                Head {
+                                    width: root.name-width;
+                                    text: "Alternativa";
+                                }
+                                Head {
+                                    width: root.value-width;
+                                    text: "Prioridad global";
+                                    horizontal-alignment: right;
+                                }
+                                Head {
+                                    width: root.value-width;
+                                    text: "Prioridad global del perfil";
+                                    horizontal-alignment: right;
+                                }
+                                Rectangle {
+                                    width: 24px;
+                                }
+                                Head {
+                                    width: 160px;
+                                    text: "Clase";
+                                }
+                            }
+                            Rectangle {
+                                height: 1px;
+                                background: Theme.border;
+                            }
+                            for row[r] in ClassificationStore.rows: Rectangle {
+                                height: root.row-height;
+                                background: mod(r, 2) == 0 ? Theme.surface : Theme.surface-alt;
+                                HorizontalLayout {
+                                    alignment: start;
+                                    Text {
+                                        width: root.name-width;
+                                        text: row.name;
+                                        font-weight: 600;
+                                        color: Theme.text;
+                                        vertical-alignment: center;
+                                        overflow: elide;
+                                    }
+                                    Text {
+                                        width: root.value-width;
+                                        text: row.global;
+                                        font-weight: 700;
+                                        color: Theme.accent;
+                                        horizontal-alignment: right;
+                                        vertical-alignment: center;
+                                    }
+                                    Text {
+                                        width: root.value-width;
+                                        text: row.profile-global;
+                                        color: Theme.text;
+                                        horizontal-alignment: right;
+                                        vertical-alignment: center;
+                                    }
+                                    Rectangle {
+                                        width: 24px;
+                                    }
+                                    HorizontalLayout {
+                                        width: 160px;
+                                        alignment: start;
+                                        CategoryTag {
+                                            y: (parent.height - self.height) / 2;
+                                            text: row.category;
+                                            index: row.category-index;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

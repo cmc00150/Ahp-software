@@ -1,5 +1,6 @@
 // Data exchanged with Rust. Each screen has one global "store": Rust fills its properties
-// and handles its callbacks. AHPSort II (T4) adds its own stores next to these.
+// and handles its callbacks. The data, questionnaire and matrix stores serve both methods;
+// the profiles, local-priority, priorities and classification stores are AHPSort II only.
 
 export struct DataColumn {
     name: string,
@@ -59,9 +60,75 @@ export struct RankItem {
     scale: float,
 }
 
+// AHPSort II: a category column of the profiles table.
+export struct ProfileColumn {
+    name: string,
+    // false for the last category in limiting mode (it has no profile).
+    has-profile: bool,
+}
+
+// AHPSort II: a row of the profiles table (one per criterion).
+export struct ProfileRow {
+    name: string,
+    unit: string,
+    // One cell per category with a profile.
+    cells: [DataCell],
+}
+
+// AHPSort II: maximum of the range [0 - max] of a criterion.
+export struct RangeCell {
+    text: string,
+    valid: bool,
+    // true: set by hand; false: follows the maximum of the criterion's values.
+    manual: bool,
+}
+
+export struct LocalRow {
+    label: string,
+    x: string,
+    y: string,
+}
+
+export struct ChartTick {
+    // Position along the axis inside the plot box (logical pixels).
+    pos: float,
+    label: string,
+}
+
+// AHPSort II: local priorities of the range points of one criterion, with its chart.
+export struct LocalTable {
+    title: string,
+    unit: string,
+    rows: [LocalRow],
+    plot-width: float,
+    plot-height: float,
+    // SVG path commands in plot-box coordinates.
+    line: string,
+    markers: string,
+    x-ticks: [ChartTick],
+    y-ticks: [ChartTick],
+}
+
+// A read-only row of a priorities table.
+export struct ResultRow {
+    name: string,
+    cells: [string],
+    total: string,
+}
+
+export struct ClassRow {
+    name: string,
+    global: string,
+    profile-global: string,
+    category: string,
+    // Position of the category in the category list (colour of its tag); -1 if unknown.
+    category-index: int,
+}
+
 // Shell: current screen, method, file and messages.
 export global NavStore {
-    // 0 start, 1 data, 2 questionnaires, 3 matrices, 4 ranking.
+    // 0 start, 1 data, 2 questionnaires, 3 matrices, then 4 ranking (classic) or
+    // 4 global priorities and 5 classification (AHPSort II).
     in property <int> screen: 0;
     in property <int> max-reached: 1;
     in property <bool> classic: true;
@@ -119,4 +186,43 @@ export global MatrixStore {
 
 export global RankingStore {
     in property <[RankItem]> items;
+}
+
+// AHPSort II: categories, profile type, ranges and profiles (data screen).
+export global ProfilesStore {
+    in property <bool> limiting;
+    in property <[ProfileColumn]> columns;
+    in property <[ProfileRow]> rows;
+    // One per criterion.
+    in property <[RangeCell]> ranges;
+    // Name of the category without profile (limiting mode).
+    in property <string> catch-all;
+    callback set-limiting(bool);
+    callback rename-category(int, string);
+    callback add-category();
+    callback remove-category(int);
+    // (criterion, text)
+    callback set-range(int, string);
+    callback set-range-auto(int);
+    // (criterion, profile, text)
+    callback set-profile(int, int, string);
+}
+
+// AHPSort II: local priority tables and charts ("Detalles prioridad local").
+export global LocalStore {
+    in property <[LocalTable]> tables;
+    // Meaning of the profile labels (CP1 = ..., ...).
+    in property <string> legend;
+}
+
+// AHPSort II: local and global priorities of the alternatives and the profiles.
+export global PrioritiesStore {
+    in property <[string]> criteria;
+    in property <[ResultRow]> alternatives;
+    in property <[ResultRow]> profiles;
+}
+
+// AHPSort II: final classification.
+export global ClassificationStore {
+    in property <[ClassRow]> rows;
 }

@@ -82,7 +82,7 @@ for matrix edits); a quiz shows the nearest Saaty integer.
       (route: delegated writer)
 - [x] T3 Slint UI: shell, start screen (mode, load/save file), classic flow (4 screens)
       (route: delegated writer)
-- [ ] T4 Slint UI: AHPSort II flow (5 screens, local priority tables + charts)
+- [x] T4 Slint UI: AHPSort II flow (5 screens, local priority tables + charts)
       (route: delegated writer)
 
 ## Acceptance criteria
@@ -115,8 +115,10 @@ for matrix edits); a quiz shows the nearest Saaty integer.
   Note: limiting-profile convention in the library = profile k is the UPPER limit of category k and the profile-less LAST category collects everything above (categories declared worst→best). The UI must explain this.
 - T2 commit `7e7e77e`. T2 review: medium, granted, lens reliability → approved + acknowledged (lineage review-dfdcd27cb495aae3). Advisory R3-001 (save before solve) fixed in a follow-up commit; R3-002 (weak mismatch test) and R3-003 (unwrap_or on missing list) left as follow-ups.
 - T3: delegated writer (first one stopped by accident, resumed by a fresh writer that kept its work); `cargo test --workspace` → 42 + 15 + 13 + 21 passed (parent spot check); clippy clean in ui; fmt clean; launch smoke exit 124 (window up). R3-001 lib follow-up fixed (check_signed in check_evaluations).
+- T3 commit `60131d7`. T3 review: medium, granted, lens reliability → approved + acknowledged (lineage review-ca5b87f5a066b819). Advisory follow-ups: R3-001 rejected matrix cell can show as valid after another edit (ui/src/models.rs update_matrix); R3-002 save ignores invalid data cells (writes previous value silently); R3-003 missing CLI test for save-after-solve.
+- T4: delegated writer; `cargo test --workspace` → 42 + 15 + 13 + 41 passed (parent spot check); clippy clean in ui; fmt clean; smoke exit 124 with londres.ahp. Includes T3 review fixes R3-001 (rejected matrix cell restored) and R3-002 (save refused while cells are invalid). Extra correctness fix: range answers remapped to their pairs when range points reorder.
 - Delivery strategy: ask-on-risk → user chose `feature-branch-chain`.
 
 ## Next step
 
-T4 (UI AHPSort II): extend AppState::enter ShortII arm, Screen list per method, models::refresh, app.slint ComingSoonPage slots, new ShortII stores.
+Feature complete. Pending human decisions: push / PR (feature-branch-chain). Open follow-ups: CLI R3-002/R3-003 (T2), lib R3-002..R3-005 (T1), T3 R3-003 (CLI save-after-solve test).

@@ -1,9 +1,77 @@
-// Screen 1: data table (rows = alternatives, columns = criteria).
+// Screen 1: data table (rows = alternatives, columns = criteria) and, for AHPSort II, the
+// categories with the profile and the range of each criterion.
 import { Button } from "std-widgets.slint";
 import { Theme } from "../theme.slint";
-import { DataStore, NavStore } from "../stores.slint";
+import { DataStore, NavStore, ProfilesStore } from "../stores.slint";
 import { Card, ErrorText, PageTitle } from "../components/common.slint";
 import { EditableTable } from "../components/editable_table.slint";
+import { ProfilesTable, Segmented } from "../components/profiles_table.slint";
+
+// AHPSort II: profile type, explanation and profiles table.
+component ProfilesCard inherits Card {
+    HorizontalLayout {
+        spacing: 12px;
+        Text {
+            text: "Perfiles";
+            font-size: Theme.font-h2;
+            font-weight: 700;
+            color: Theme.text;
+            vertical-alignment: center;
+        }
+        Rectangle {
+            horizontal-stretch: 1;
+        }
+        Text {
+            text: "Tipo de perfil:";
+            color: Theme.muted;
+            vertical-alignment: center;
+        }
+        Segmented {
+            options: ["Central", "Límite"];
+            selected: ProfilesStore.limiting ? 1 : 0;
+            picked(i) => {
+                ProfilesStore.set-limiting(i == 1);
+            }
+        }
+    }
+    Text {
+        text: ProfilesStore.limiting
+            ? "Perfiles límite: las categorías se ordenan de menor a mayor prioridad global. El perfil de cada categoría es su límite superior; la última categoría («" + ProfilesStore.catch-all + "») no tiene perfil y recoge las alternativas que superan todos los límites."
+            : "Perfiles centrales: cada categoría tiene un perfil, su valor típico en cada criterio.";
+        color: Theme.muted;
+        wrap: word-wrap;
+    }
+    Text {
+        text: "Rango: los puntos RP1…RP6 van de 0 al máximo. Con «Auto» el máximo es el mayor valor del criterio; si lo editas queda fijo hasta que vuelvas a pulsar «Auto».";
+        color: Theme.muted;
+        font-size: Theme.font-small;
+        wrap: word-wrap;
+    }
+    ProfilesTable {
+        vertical-stretch: 1;
+        columns: ProfilesStore.columns;
+        rows: ProfilesStore.rows;
+        ranges: ProfilesStore.ranges;
+        category-renamed(k, t) => {
+            ProfilesStore.rename-category(k, t);
+        }
+        add-category => {
+            ProfilesStore.add-category();
+        }
+        remove-category(k) => {
+            ProfilesStore.remove-category(k);
+        }
+        range-edited(c, t) => {
+            ProfilesStore.set-range(c, t);
+        }
+        range-auto(c) => {
+            ProfilesStore.set-range-auto(c);
+        }
+        profile-edited(c, k, t) => {
+            ProfilesStore.set-profile(c, k, t);
+        }
+    }
+}
 
 export component DataPage {
     VerticalLayout {
@@ -43,6 +111,9 @@ export component DataPage {
                     DataStore.remove-alternative(r);
                 }
             }
+        }
+        if !NavStore.classic: ProfilesCard {
+            vertical-stretch: 1;
         }
         ErrorText {
             text: DataStore.errors;

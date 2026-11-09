@@ -1,0 +1,67 @@
+// AHPSort II screen 4: local priority under each criterion and global priority of every
+// alternative and of every category profile (read-only).
+import { Button, ScrollView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { NavStore, PrioritiesStore } from "../stores.slint";
+import { Card, PageTitle } from "../components/common.slint";
+import { ResultTable } from "../components/result_table.slint";
+
+component TableCard inherits Card {
+    in property <string> title;
+    Text {
+        text: root.title;
+        font-size: Theme.font-h2;
+        font-weight: 700;
+        color: Theme.text;
+    }
+    @children
+}
+
+export component PrioritiesPage {
+    VerticalLayout {
+        padding: 20px;
+        spacing: 12px;
+        PageTitle {
+            title: "Prioridades globales";
+            subtitle: "Prioridad local de cada alternativa y de cada perfil según cada criterio, y su prioridad global (suma ponderada por los pesos de los criterios).";
+        }
+        ScrollView {
+            vertical-stretch: 1;
+            HorizontalLayout {
+                alignment: start;
+                VerticalLayout {
+                    spacing: 14px;
+                    padding-right: 12px;
+                    padding-bottom: 12px;
+                    alignment: start;
+                    TableCard {
+                        title: "Alternativas";
+                        ResultTable {
+                            name-header: "Alternativa";
+                            headers: PrioritiesStore.criteria;
+                            rows: PrioritiesStore.alternatives;
+                        }
+                    }
+                    TableCard {
+                        title: "Perfiles de las categorías";
+                        ResultTable {
+                            name-header: "Categoría";
+                            headers: PrioritiesStore.criteria;
+                            rows: PrioritiesStore.profiles;
+                        }
+                    }
+                }
+            }
+        }
+        HorizontalLayout {
+            alignment: end;
+            Button {
+                text: "Continuar";
+                primary: true;
+                clicked => {
+                    NavStore.next();
+                }
+            }
+        }
+    }
+}
