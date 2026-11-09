@@ -1,6 +1,6 @@
 // Application shell: top bar (Atrás, file, Guardar), step header, message bar and the
 // current screen.
-import { Button, Palette } from "std-widgets.slint";
+import { Button, ComboBox, Palette } from "std-widgets.slint";
 import { Theme } from "theme.slint";
 import { NavStore, DataStore, QuizStore, MatrixStore, RankingStore, ProfilesStore, LocalStore, PrioritiesStore, ClassificationStore } from "stores.slint";
 import { MessageBanner, StepHeader } from "components/common.slint";
@@ -60,6 +60,18 @@ export component AppWindow inherits Window {
                     vertical-alignment: center;
                     overflow: elide;
                     horizontal-stretch: 1;
+                }
+                Text {
+                    text: "Pesos:";
+                    color: Theme.muted;
+                    vertical-alignment: center;
+                }
+                ComboBox {
+                    model: ["Autovalores", "Media geométrica", "Aproximado"];
+                    current-index: NavStore.weight-method;
+                    selected => {
+                        NavStore.set-weight-method(self.current-index);
+                    }
                 }
                 Button {
                     text: Theme.dark ? "Modo claro" : "Modo oscuro";

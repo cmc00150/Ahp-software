@@ -132,6 +132,8 @@ export global NavStore {
     in property <int> screen: 0;
     in property <int> max-reached: 1;
     in property <bool> classic: true;
+    // 0 eigenvalues, 1 geometric mean, 2 approximated.
+    in property <int> weight-method: 0;
     in property <bool> has-project: false;
     in property <string> file-name;
     in property <string> message;
@@ -143,6 +145,7 @@ export global NavStore {
     callback new-problem();
     callback load-file();
     callback set-classic(bool);
+    callback set-weight-method(int);
     callback dismiss-message();
 }
 

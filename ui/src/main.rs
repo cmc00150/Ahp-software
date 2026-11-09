@@ -13,7 +13,7 @@ mod state;
 
 use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
-use ahp::{Method, ProfileType};
+use ahp::{Method, ProfileType, WeightMethod};
 use slint::ComponentHandle;
 
 use state::{AppState, Screen};
@@ -124,6 +124,15 @@ fn wire_navigation(ui: &AppWindow, state: &Shared) {
             Method::sortII
         });
         models::refresh(&ui, st);
+    }));
+    nav.on_set_weight_method(handler!(ui, state, |ui, st, index: i32| {
+        let method = match index {
+            1 => WeightMethod::GeometricMean,
+            2 => WeightMethod::Approximated,
+            _ => WeightMethod::EigenValues,
+        };
+        let result = st.set_weight_method(method);
+        finish(&ui, st, result);
     }));
     nav.on_dismiss_message({
         let weak = ui.as_weak();

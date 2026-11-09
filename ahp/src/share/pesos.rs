@@ -37,7 +37,6 @@ impl WeightMethod {
             }
             WeightMethod::GeometricMean => {
                 let mut row_prod = vec![1.0; n];
-                let mut total = n as f64; // Por la diagonal que son todos 1
 
                 for i in 0..n {
                     for j in (i + 1)..n {
@@ -45,13 +44,16 @@ impl WeightMethod {
                         if let Some(v) = a.get(i, j) {
                             row_prod[i] *= v;
                             row_prod[j] *= 1.0 / v;
-                            total += (v * v + 1.0) / v
                         }
                     }
                 }
 
-                row_prod.iter_mut().for_each(|v| *v /= total);
-                row_prod
+                let roots = row_prod
+                    .iter()
+                    .map(|p| p.powf(1.0 / n as f64))
+                    .collect::<Vec<f64>>();
+                let total: f64 = roots.iter().sum();
+                roots.into_iter().map(|r| r / total).collect()
             }
             WeightMethod::EigenValues => {
                 let mut w = vec![n as f64; n];

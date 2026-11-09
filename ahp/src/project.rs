@@ -29,7 +29,6 @@ use crate::{
 
 /// Number of equidistant reference points (RP1..RP6) per AHPSort II criterion.
 const RANGE_POINTS: usize = 6;
-const METHOD: WeightMethod = WeightMethod::EigenValues;
 
 /// Criteria quiz plus one `(criterion, quiz)` per criterion.
 pub type QuizSet = (QuizPairMatrix, Vec<(String, QuizPairMatrix)>);
@@ -716,9 +715,15 @@ fn check_evaluations(
     Ok(())
 }
 
-/// Solves a classic AHP project with the exact signed evaluations.
-pub fn solve_classic(project: &Project, ev: &Evaluations) -> Result<ClassicOutcome, ProjectError> {
+/// Solves a classic AHP project with the exact signed evaluations, calculating every weight
+/// (criteria, alternatives and ranking) with `method`.
+pub fn solve_classic(
+    project: &Project,
+    ev: &Evaluations,
+    method: WeightMethod,
+) -> Result<ClassicOutcome, ProjectError> {
     let mut ahp = project.build_classic()?;
+    ahp.set_weight_method(method);
     let mut c_quiz = ahp.evaluate_criteria();
     let a_quizzes = ahp.evaluate_alternatives();
     check_evaluations(ev, &c_quiz, &a_quizzes)?;
@@ -747,7 +752,7 @@ pub fn solve_classic(project: &Project, ev: &Evaluations) -> Result<ClassicOutco
     let criteria = matrix_view(
         c_labels,
         |i, j| ahp.get_matrix_criterion_value(i, j),
-        ahp.criteria_weights(METHOD),
+        ahp.criteria_weights(),
     )?;
     let alternatives = project
         .criteria
@@ -757,7 +762,7 @@ pub fn solve_classic(project: &Project, ev: &Evaluations) -> Result<ClassicOutco
             matrix_view(
                 project.alternatives.clone(),
                 |i, j| ahp.get_matrix_alternative_value(k, i, j),
-                ahp.alternative_weights(k, METHOD),
+                ahp.alternative_weights(k),
             )
             .map(|m| (c.name.clone(), m))
         })
@@ -773,9 +778,15 @@ pub fn solve_classic(project: &Project, ev: &Evaluations) -> Result<ClassicOutco
     })
 }
 
-/// Solves an AHPSort II project with the exact signed evaluations.
-pub fn solve_sort(project: &Project, ev: &Evaluations) -> Result<sortOutcome, ProjectError> {
+/// Solves an AHPSort II project with the exact signed evaluations, calculating every weight
+/// (criteria, ranges and classification) with `method`.
+pub fn solve_sort(
+    project: &Project,
+    ev: &Evaluations,
+    method: WeightMethod,
+) -> Result<sortOutcome, ProjectError> {
     let mut ahp = project.build_sort()?;
+    ahp.set_weight_method(method);
     let mut c_quiz = ahp.evaluate_criteria();
     let r_quizzes = ahp.evaluate_ranges();
     check_evaluations(ev, &c_quiz, &r_quizzes)?;
@@ -807,7 +818,7 @@ pub fn solve_sort(project: &Project, ev: &Evaluations) -> Result<sortOutcome, Pr
     let criteria = matrix_view(
         c_labels,
         |i, j| ahp.get_matrix_criterion_value(i, j),
-        ahp.criteria_weights(METHOD),
+        ahp.criteria_weights(),
     )?;
     let ranges = r_labels
         .iter()
@@ -816,7 +827,7 @@ pub fn solve_sort(project: &Project, ev: &Evaluations) -> Result<sortOutcome, Pr
             matrix_view(
                 labels.to_owned(),
                 |i, j| ahp.get_matrix_range_value(k, i, j),
-                ahp.ranges_weights(k, METHOD),
+                ahp.ranges_weights(k),
             )
             .map(|m| (name.to_owned(), m))
         })
@@ -959,7 +970,7 @@ fn solves_the_classic_example() {
     let (ev, missing) = Evaluations::from_project(&p, Method::Classic).unwrap();
     assert!(missing.is_complete());
 
-    let out = solve_classic(&p, &ev).unwrap();
+    let out = solve_classic(&p, &ev, WeightMethod::EigenValues).unwrap();
     assert_eq!(out.ranking.len(), 4);
     assert!(
         out.ranking.windows(2).all(|w| w[0].1 >= w[1].1),
@@ -985,7 +996,7 @@ fn solve_uses_the_exact_signed_values() {
     let (mut ev, _) = Evaluations::from_project(&p, Method::Classic).unwrap();
     ev.criteria[0] = 2.5;
     ev.per_criterion[0][0] = -3.5;
-    let out = solve_classic(&p, &ev).unwrap();
+    let out = solve_classic(&p, &ev, WeightMethod::EigenValues).unwrap();
     assert_close(out.criteria.cells[0][1], 2.5, 1e-12);
     assert_close(out.alternatives[0].1.cells[0][1], 1.0 / 3.5, 1e-12);
     assert_close(out.alternatives[0].1.cells[1][0], 3.5, 1e-12);
@@ -997,7 +1008,7 @@ fn solves_the_sort_example_with_a_mix_of_categories() {
     let (ev, missing) = Evaluations::from_project(&p, Method::sortII).unwrap();
     assert!(missing.is_complete());
 
-    let out = solve_sort(&p, &ev).unwrap();
+    let out = solve_sort(&p, &ev, WeightMethod::EigenValues).unwrap();
     let names = &p.categories.as_ref().unwrap().names;
     assert_eq!(out.classification.len(), p.alternatives.len());
     assert!(out.classification.iter().all(|(_, _, c)| names.contains(c)));
@@ -1094,11 +1105,18 @@ fn stored_evaluations_reload_complete() {
         .collect();
     assert_eq!(keys, p.criteria_names());
     // Same results as the shipped complete example
-    assert_eq!(solve_sort(&reloaded, &again).unwrap().classification, {
-        let full = example("londres.ahp");
-        let (ev, _) = Evaluations::from_project(&full, Method::sortII).unwrap();
-        solve_sort(&full, &ev).unwrap().classification
-    });
+    assert_eq!(
+        solve_sort(&reloaded, &again, WeightMethod::EigenValues)
+            .unwrap()
+            .classification,
+        {
+            let full = example("londres.ahp");
+            let (ev, _) = Evaluations::from_project(&full, Method::sortII).unwrap();
+            solve_sort(&full, &ev, WeightMethod::EigenValues)
+                .unwrap()
+                .classification
+        }
+    );
 }
 
 #[test]
@@ -1125,7 +1143,7 @@ fn limiting_profiles_use_the_last_category_as_catch_all() {
     let p = Project::from_toml_str(text).unwrap();
     let (mut ev, _) = Evaluations::from_project(&p, Method::sortII).unwrap();
     ev.per_criterion = lower_is_better(&p);
-    let out = solve_sort(&p, &ev).unwrap();
+    let out = solve_sort(&p, &ev, WeightMethod::EigenValues).unwrap();
 
     assert_eq!(out.profiles.len(), 2, "the last category has no profile");
     let class = |alt: &str| {
@@ -1207,7 +1225,7 @@ fn solve_rejects_evaluations_of_the_wrong_shape() {
     let mut ev = Evaluations::defaults(&p, Method::Classic);
     ev.per_criterion[1].pop();
     assert!(matches!(
-        solve_classic(&p, &ev),
+        solve_classic(&p, &ev, WeightMethod::EigenValues),
         Err(ProjectError::Invalid(_))
     ));
 }
@@ -1221,7 +1239,7 @@ fn solve_rejects_non_finite_or_out_of_scale_evaluations() {
         criteria_bad.criteria[0] = bad;
         assert!(
             matches!(
-                solve_classic(&p, &criteria_bad),
+                solve_classic(&p, &criteria_bad, WeightMethod::EigenValues),
                 Err(ProjectError::Invalid(_))
             ),
             "criteria value {bad} must be rejected"
@@ -1229,7 +1247,10 @@ fn solve_rejects_non_finite_or_out_of_scale_evaluations() {
         let mut alt_bad = ev.clone();
         alt_bad.per_criterion[2][1] = bad;
         assert!(
-            matches!(solve_classic(&p, &alt_bad), Err(ProjectError::Invalid(_))),
+            matches!(
+                solve_classic(&p, &alt_bad, WeightMethod::EigenValues),
+                Err(ProjectError::Invalid(_))
+            ),
             "alternative value {bad} must be rejected"
         );
     }
@@ -1238,9 +1259,9 @@ fn solve_rejects_non_finite_or_out_of_scale_evaluations() {
     let mut ev = Evaluations::defaults(&sort, Method::sortII);
     ev.per_criterion[0][0] = f64::NAN;
     assert!(matches!(
-        solve_sort(&sort, &ev),
+        solve_sort(&sort, &ev, WeightMethod::EigenValues),
         Err(ProjectError::Invalid(_))
     ));
     let (valid, _) = Evaluations::from_project(&p, Method::Classic).unwrap();
-    assert!(solve_classic(&p, &valid).is_ok());
+    assert!(solve_classic(&p, &valid, WeightMethod::EigenValues).is_ok());
 }

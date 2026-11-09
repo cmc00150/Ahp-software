@@ -12,7 +12,7 @@ use std::{
 };
 
 use ahp::{
-    Categories, ClassicOutcome, Criterion, Evaluations, Method, ProfileType, Project,
+    Categories, ClassicOutcome, Criterion, Evaluations, Method, ProfileType, Project, WeightMethod,
     solve_classic, solve_sort, sortOutcome,
 };
 
@@ -281,6 +281,8 @@ pub fn blank_project(method: Method) -> Project {
 pub struct AppState {
     pub project: Project,
     pub method: Method,
+    /// Method used to calculate every weight; it is kept when a problem is created or loaded.
+    pub weight_method: WeightMethod,
     pub evaluations: Evaluations,
     /// File the project was loaded from or last saved to.
     pub file: Option<PathBuf>,
@@ -320,6 +322,7 @@ impl AppState {
         Self {
             project,
             method: Method::Classic,
+            weight_method: WeightMethod::EigenValues,
             evaluations,
             file: None,
             has_project: false,
@@ -923,13 +926,28 @@ impl AppState {
         result
     }
 
+    /// Changes the weight method. The result is recomputed right away when a result screen
+    /// is open, otherwise it is recomputed when the user gets there.
+    pub fn set_weight_method(&mut self, method: WeightMethod) -> Result<(), String> {
+        if method == self.weight_method {
+            return Ok(());
+        }
+        self.weight_method = method;
+        self.outcome = None;
+        if self.screen >= Screen::Matrices {
+            self.solve()?;
+        }
+        Ok(())
+    }
+
     /// Solves the problem with the current method and evaluations.
     pub fn solve(&mut self) -> Result<(), String> {
         let outcome = match self.method {
-            Method::Classic => {
-                solve_classic(&self.project, &self.evaluations).map(Outcome::Classic)
+            Method::Classic => solve_classic(&self.project, &self.evaluations, self.weight_method)
+                .map(Outcome::Classic),
+            Method::sortII => {
+                solve_sort(&self.project, &self.evaluations, self.weight_method).map(Outcome::sort)
             }
-            Method::sortII => solve_sort(&self.project, &self.evaluations).map(Outcome::sort),
         };
         self.outcome = Some(outcome.map_err(|e| e.to_string())?);
         Ok(())
@@ -1340,6 +1358,21 @@ mod tests {
 
     fn all_keys(st: &AppState, c: usize) -> Vec<PointKey> {
         range_point_order(&st.project, c)
+    }
+
+    #[test]
+    fn changing_the_weight_method_recomputes_the_result() {
+        let mut st = loaded("coches.ahp");
+        st.jump_to_result().unwrap();
+        let eigen = st.classic_outcome().unwrap().ranking.clone();
+        assert_eq!(st.weight_method, WeightMethod::EigenValues);
+
+        st.set_weight_method(WeightMethod::GeometricMean).unwrap();
+        assert_eq!(st.weight_method, WeightMethod::GeometricMean);
+        let geometric = st.classic_outcome().expect("solved again").ranking.clone();
+        assert_eq!(geometric.len(), eigen.len());
+        // CI/CR only exist with eigenvalues
+        assert!(st.classic_outcome().unwrap().criteria.report.ci.is_none());
     }
 
     #[test]

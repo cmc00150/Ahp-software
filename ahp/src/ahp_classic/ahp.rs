@@ -12,6 +12,8 @@ pub struct Ahp {
 
     criteria_matrix: Option<PairMatrix>,
     alt_matrices: Option<Vec<PairMatrix>>,
+
+    w_method: WeightMethod,
 }
 
 impl Ahp {
@@ -34,6 +36,7 @@ impl Ahp {
                 values,
                 criteria_matrix: None,
                 alt_matrices: None,
+                w_method: WeightMethod::EigenValues,
             })
         }
     }
@@ -49,6 +52,14 @@ impl Ahp {
     /// Values table: one row per criterion, one column per alternative.
     pub fn values(&self) -> &Table {
         &self.values
+    }
+
+    pub fn weight_method(&self) -> WeightMethod {
+        self.w_method
+    }
+
+    pub fn set_weight_method(&mut self, method: WeightMethod) {
+        self.w_method = method;
     }
 
     pub fn evaluate_criteria(&self) -> QuizPairMatrix {
@@ -136,21 +147,17 @@ impl Ahp {
             .set(row, col, value)
     }
 
-    pub fn criteria_weights(&self, method: WeightMethod) -> Option<WeightsReport> {
+    pub fn criteria_weights(&self) -> Option<WeightsReport> {
         self.criteria_matrix
             .as_ref()
-            .map(|m| WeightsReport::from_matrix(method, m))
+            .map(|m| WeightsReport::from_matrix(self.w_method, m))
     }
 
-    pub fn alternative_weights(
-        &self,
-        criterion_idx: usize,
-        method: WeightMethod,
-    ) -> Option<WeightsReport> {
+    pub fn alternative_weights(&self, criterion_idx: usize) -> Option<WeightsReport> {
         self.alt_matrices
             .as_ref()?
             .get(criterion_idx)
-            .map(|m| WeightsReport::from_matrix(method, m))
+            .map(|m| WeightsReport::from_matrix(self.w_method, m))
     }
 
     pub fn rank(&self) -> Result<Vec<(String, f64)>, &'static str> {
@@ -158,7 +165,7 @@ impl Ahp {
             .criteria_matrix
             .as_ref()
             .ok_or("[Ahp::rank] Falta la matriz de criterios")?;
-        let criteria_weights = WeightMethod::EigenValues.calc_weights(c_matrix);
+        let criteria_weights = self.w_method.calc_weights(c_matrix);
 
         // Un vector de pesos por criterio, en el orden de criteria_labels
         let alt_matrices = self
@@ -167,7 +174,7 @@ impl Ahp {
             .ok_or("[Ahp::rank] Falta alguna matriz de alternativas")?;
         let alternatives_weights = alt_matrices
             .iter()
-            .map(|m| WeightMethod::EigenValues.calc_weights(m))
+            .map(|m| self.w_method.calc_weights(m))
             .collect::<Vec<Vec<f64>>>();
 
         let mut ranking = self
@@ -234,5 +241,20 @@ mod tests {
         );
         // Empty values with labels: used to panic on `values[0]`
         assert!(Ahp::new(vec!["c1"], vec!["a1"], table(&[])).is_err());
+    }
+
+    #[test]
+    fn weight_method_defaults_to_eigenvalues_and_can_be_changed() {
+        use crate::share::pesos::WeightMethod;
+
+        let mut ahp = Ahp::new(
+            vec!["c1", "c2"],
+            vec!["a1", "a2"],
+            table(&[&[1.0, 2.0], &[3.0, 4.0]]),
+        )
+        .unwrap();
+        assert_eq!(ahp.weight_method(), WeightMethod::EigenValues);
+        ahp.set_weight_method(WeightMethod::GeometricMean);
+        assert_eq!(ahp.weight_method(), WeightMethod::GeometricMean);
     }
 }

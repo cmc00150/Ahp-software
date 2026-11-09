@@ -6,7 +6,7 @@
 
 use std::rc::Rc;
 
-use ahp::{MatrixView, Method, ProfileType, QuizItem, Value, quizzes};
+use ahp::{MatrixView, Method, ProfileType, QuizItem, Value, WeightMethod, quizzes};
 use slint::{ComponentHandle, Model, ModelRc, SharedString, VecModel};
 
 use crate::{
@@ -59,6 +59,11 @@ pub fn refresh_nav(ui: &AppWindow, st: &AppState) {
     nav.set_screen(st.screen.index());
     nav.set_max_reached(st.max_reached.index());
     nav.set_classic(st.method == Method::Classic);
+    nav.set_weight_method(match st.weight_method {
+        WeightMethod::EigenValues => 0,
+        WeightMethod::GeometricMean => 1,
+        WeightMethod::Approximated => 2,
+    });
     nav.set_has_project(st.has_project);
     let file = st
         .file

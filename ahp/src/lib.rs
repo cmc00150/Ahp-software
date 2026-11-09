@@ -80,6 +80,25 @@ mod tests {
     }
 
     #[test]
+    fn todos_los_metodos_coinciden_en_una_matriz_consistente() {
+        // En una matriz consistente los tres métodos dan el mismo vector, normalizado.
+        let m = matriz_ejemplo();
+        for method in [
+            WeightMethod::Approximated,
+            WeightMethod::GeometricMean,
+            WeightMethod::EigenValues,
+        ] {
+            let v = method.calc_weights(&m);
+            assert_eq!(
+                v.iter().map(|val| redondear(*val, 3)).collect::<Vec<f64>>(),
+                vec![0.667, 0.111, 0.222],
+                "{method:?}"
+            );
+            assert!((v.iter().sum::<f64>() - 1.0).abs() < 1e-9, "{method:?}");
+        }
+    }
+
+    #[test]
     fn lambda_max() {
         let m = matriz_ejemplo();
         let v = WeightMethod::EigenValues.calc_weights(&m);

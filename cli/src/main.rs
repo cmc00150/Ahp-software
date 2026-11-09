@@ -8,8 +8,8 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use ahp::{Evaluations, Method, Project, quizzes, solve_classic, solve_sort};
-use clap::{ArgAction, Args, Parser, Subcommand};
+use ahp::{Evaluations, Method, Project, WeightMethod, quizzes, solve_classic, solve_sort};
+use clap::{ArgAction, Args, Parser, Subcommand, ValueEnum};
 
 use questionnaire::Prompter;
 
@@ -61,6 +61,28 @@ enum Command {
     sortII(RunArgs),
 }
 
+/// Método con el que se calculan los pesos de las matrices de comparación.
+#[derive(ValueEnum, Debug, Clone, Copy, Default)]
+enum WeightArg {
+    /// Autovalor y autovector principal (permite calcular CI y CR)
+    #[default]
+    Autovalores,
+    /// Media geométrica de las filas
+    MediaGeometrica,
+    /// Método aproximado (normalización de columnas y media de filas)
+    Aproximado,
+}
+
+impl From<WeightArg> for WeightMethod {
+    fn from(arg: WeightArg) -> Self {
+        match arg {
+            WeightArg::Autovalores => WeightMethod::EigenValues,
+            WeightArg::MediaGeometrica => WeightMethod::GeometricMean,
+            WeightArg::Aproximado => WeightMethod::Approximated,
+        }
+    }
+}
+
 #[derive(Args, Debug)]
 struct RunArgs {
     /// Fichero de proyecto .ahp
@@ -70,6 +92,10 @@ struct RunArgs {
     /// Muestra solo el resultado final (ranking o clasificación)
     #[arg(long = "no-verbose")]
     no_verbose: bool,
+
+    /// Método de cálculo de los pesos
+    #[arg(long, value_enum, value_name = "MÉTODO", default_value = "autovalores")]
+    metodo: WeightArg,
 
     /// Guarda el proyecto con las evaluaciones completas en este fichero
     #[arg(long, value_name = "SALIDA")]
@@ -136,11 +162,13 @@ fn run(method: Method, args: RunArgs) -> Result<String, String> {
     let verbose = !args.no_verbose;
     let text = match method {
         Method::Classic => {
-            let outcome = solve_classic(&project, &ev).map_err(|e| e.to_string())?;
+            let outcome =
+                solve_classic(&project, &ev, args.metodo.into()).map_err(|e| e.to_string())?;
             report::classic(&project, &outcome, verbose)
         }
         Method::sortII => {
-            let outcome = solve_sort(&project, &ev).map_err(|e| e.to_string())?;
+            let outcome =
+                solve_sort(&project, &ev, args.metodo.into()).map_err(|e| e.to_string())?;
             report::sort(&project, &outcome, verbose)
         }
     };

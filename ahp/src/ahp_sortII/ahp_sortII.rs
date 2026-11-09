@@ -26,6 +26,8 @@ pub struct Ahpsort {
     ranges_matrix: Option<Vec<PairMatrix>>,
 
     ranges_priorities: Option<Vec<Vec<Priorities>>>, // valor original, peso
+
+    w_method: WeightMethod,
 }
 
 impl Ahpsort {
@@ -69,6 +71,7 @@ impl Ahpsort {
                 ranges_matrix: None,
                 criteria_matrix: None,
                 ranges_priorities: None,
+                w_method: WeightMethod::EigenValues,
             })
         }
     }
@@ -182,7 +185,7 @@ impl Ahpsort {
 
         // Rellenamos los pesos de las prioridades
         for (row, m) in priorities.iter_mut().zip(&matrices) {
-            let w = WeightMethod::EigenValues.calc_weights(m);
+            let w = self.w_method.calc_weights(m);
             for (prio, wi) in row.iter_mut().zip(w) {
                 prio.weight = Some(wi);
             }
@@ -227,6 +230,7 @@ impl Ahpsort {
         col: usize,
         value: f64,
     ) -> Result<(), &'static str> {
+        let method = self.w_method;
         let matrix = self
             .ranges_matrix
             .as_mut()
@@ -235,8 +239,8 @@ impl Ahpsort {
             .ok_or("[Ahpsort::set_matrix_range_value] El criterio no existe")?;
         matrix.set(row, col, value)?;
 
-        // Keep the range priorities in sync with the edited matrix
-        let weights = WeightMethod::EigenValues.calc_weights(matrix);
+        // Mantener los pesos de los rangos sincronizados
+        let weights = method.calc_weights(matrix);
         if let Some(row) = self
             .ranges_priorities
             .as_mut()
@@ -249,21 +253,34 @@ impl Ahpsort {
         Ok(())
     }
 
-    pub fn criteria_weights(&self, method: WeightMethod) -> Option<WeightsReport> {
-        self.criteria_matrix
-            .as_ref()
-            .map(|m| WeightsReport::from_matrix(method, m))
+    pub fn weight_method(&self) -> WeightMethod {
+        self.w_method
     }
 
-    pub fn ranges_weights(
-        &self,
-        criterion_idx: usize,
-        method: WeightMethod,
-    ) -> Option<WeightsReport> {
+    pub fn set_weight_method(&mut self, method: WeightMethod) {
+        self.w_method = method;
+        if let (Some(matrices), Some(priorities)) =
+            (&self.ranges_matrix, &mut self.ranges_priorities)
+        {
+            for (row, m) in priorities.iter_mut().zip(matrices) {
+                for (prio, w) in row.iter_mut().zip(method.calc_weights(m)) {
+                    prio.weight = Some(w);
+                }
+            }
+        }
+    }
+
+    pub fn criteria_weights(&self) -> Option<WeightsReport> {
+        self.criteria_matrix
+            .as_ref()
+            .map(|m| WeightsReport::from_matrix(self.w_method, m))
+    }
+
+    pub fn ranges_weights(&self, criterion_idx: usize) -> Option<WeightsReport> {
         self.ranges_matrix
             .as_ref()?
             .get(criterion_idx)
-            .map(|m| WeightsReport::from_matrix(method, m))
+            .map(|m| WeightsReport::from_matrix(self.w_method, m))
     }
 
     pub fn ranges_priorities(&self) -> Option<Vec<(&str, &[Priorities])>> {
@@ -294,7 +311,7 @@ impl Ahpsort {
         const MISSING: &str = "[Ahpsort::profiles_global_priorities] Faltan las prioridades de rangos, envía antes los cuestionarios de rangos.";
 
         let c_weights = self
-            .criteria_weights(WeightMethod::EigenValues)
+            .criteria_weights()
             .ok_or("[Ahpsort::profiles_global_priorities] Falta la matriz de criterios.")?
             .weights;
         let priorities = self.ranges_priorities.as_ref().ok_or(MISSING)?;
@@ -353,7 +370,7 @@ impl Ahpsort {
         const MISSING: &str = "[Ahpsort::alternatives_global_priorities] Faltan las prioridades de rangos, envía antes los cuestionarios de rangos.";
 
         let c_weights = self
-            .criteria_weights(WeightMethod::EigenValues)
+            .criteria_weights()
             .ok_or("[Ahpsort::alternatives_global_priorities] Falta la matriz de criterios.")?
             .weights;
         let priorities = self.ranges_priorities.as_ref().ok_or(MISSING)?;
@@ -641,10 +658,7 @@ mod constructor_tests {
 
         ahp.set_matrix_range_value(0, 0, 1, 7.0).unwrap();
 
-        let expected = ahp
-            .ranges_weights(0, WeightMethod::EigenValues)
-            .unwrap()
-            .weights;
+        let expected = ahp.ranges_weights(0).unwrap().weights;
         let after: Vec<f64> = ahp.ranges_priorities().unwrap()[0]
             .1
             .iter()
