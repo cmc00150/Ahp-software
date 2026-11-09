@@ -1,0 +1,39 @@
+# Problema 2 - AHP clásico: selección de una herramienta de gestión de proyectos (T1, T2, T3).
+#
+# - Criterios: Programación de tareas (C1), Colaboración (C2), Evaluación de riesgos (C3) y
+#   Visualización gráfica (C4).
+# - Las matrices de comparación son las que da el enunciado (escala de Saaty). Se guarda solo
+#   el triángulo superior; el inferior es el recíproco.
+# - El enunciado no da cifras por criterio, así que `values` son marcadores (0.0): no se usan
+#   en el cálculo, solo hace falta un valor por alternativa para que el fichero sea válido.
+
+method = "classic"
+alternatives = ["T1", "T2", "T3"]
+
+[[criteria]]
+name = "Programación de tareas"
+values = [0.0, 0.0, 0.0]
+
+[[criteria]]
+name = "Colaboración"
+values = [0.0, 0.0, 0.0]
+
+[[criteria]]
+name = "Evaluación de riesgos"
+values = [0.0, 0.0, 0.0]
+
+[[criteria]]
+name = "Visualización gráfica"
+values = [0.0, 0.0, 0.0]
+
+[evaluations]
+# P.Tareas-Colaboración, P.Tareas-E.Riesgos, P.Tareas-V.Gráfica, Colaboración-E.Riesgos,
+# Colaboración-V.Gráfica, E.Riesgos-V.Gráfica
+criteria = [2, 6, 2, 7, 1, 5]
+
+[evaluations.alternatives]
+# T1-T2, T1-T3, T2-T3
+"Programación de tareas" = [-6, 6, 4]
+"Colaboración" = [5, 2, -7]
+"Evaluación de riesgos" = [-4, -2, 4]
+"Visualización gráfica" = [-5, -2, 1]

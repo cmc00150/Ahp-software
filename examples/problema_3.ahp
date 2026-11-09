@@ -1,0 +1,42 @@
+method = "classic"
+alternatives = ["Diomande", "Barcola", "Rogers", "Rivera"]
+
+
+[[criteria]]
+name = "Goles"
+unit = "goles"
+values = [12.0, 11.0, 10.0, 16.0]
+
+
+[[criteria]]
+name = "Asistencias"
+unit = "asist."
+values = [8.0, 1.0, 6.0, 10.0]
+
+
+[[criteria]]
+name = "Potencial"
+unit = "edad"
+values = [15.0, 11.0, 10.0, 13.0]
+
+
+[[criteria]]
+name = "Liderazgo"
+values = [3.0, 4.0, 4.0, 4.0]
+
+
+[[criteria]]
+name = "Adaptabilidad"
+values = [3.0, 3.0, 4.0, 4.0]
+
+
+[evaluations]
+criteria = [7.0, 1.0, -4.0, 1.0, -6.0, -6.0, -6.0, 4.0, 7.0, 1.0]
+
+
+[evaluations.alternatives]
+Goles = [2.0, 3.0, -4.0, 2.0, -6.0, -7.0]
+Asistencias = [7.0, 4.0, -4.0, -6.0, -9.0, -7.0]
+Potencial = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+Liderazgo = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+Adaptabilidad = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]

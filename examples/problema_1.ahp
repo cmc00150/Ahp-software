@@ -1,0 +1,39 @@
+# Problema 1 - AHP clásico: ubicación de un nuevo local de productos electrónicos.
+#
+# - Alternativas: Mall (A), Centro (B) y Pasaje subterráneo (C).
+# - Criterios: Compradores, Visibilidad, Competencia y Costo.
+# - Las matrices de comparación son las del enunciado (escala de Saaty). Se guarda solo el
+#   triángulo superior; el inferior es el recíproco.
+# - El enunciado no da cifras por criterio, así que `values` son marcadores (0.0): no se usan
+#   en el cálculo, solo hace falta un valor por alternativa para que el fichero sea válido.
+
+method = "classic"
+alternatives = ["Mall (A)", "Centro (B)", "P. Subt. (C)"]
+
+[[criteria]]
+name = "Compradores"
+values = [0.0, 0.0, 0.0]
+
+[[criteria]]
+name = "Visibilidad"
+values = [0.0, 0.0, 0.0]
+
+[[criteria]]
+name = "Competencia"
+values = [0.0, 0.0, 0.0]
+
+[[criteria]]
+name = "Costo"
+values = [0.0, 0.0, 0.0]
+
+[evaluations]
+# Compradores-Visibilidad, Compradores-Competencia, Compradores-Costo,
+# Visibilidad-Competencia, Visibilidad-Costo, Competencia-Costo
+criteria = [3, 7, 8, 3, 6, 3]
+
+[evaluations.alternatives]
+# Mall-Centro, Mall-P.Subt., Centro-P.Subt.
+"Compradores" = [8, 6, -3]
+"Visibilidad" = [5, -3, -7]
+"Competencia" = [-7, -2, 4]
+"Costo" = [-8, -4, 3]
