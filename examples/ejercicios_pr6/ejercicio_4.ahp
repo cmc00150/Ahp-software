@@ -1,0 +1,87 @@
+# Ejercicio 4 - AHPSort II: criminalidad 2023 de las 50 provincias españolas con la
+# calibración de 2017 (data/Datos_nacionales_2023_por_10000_ES.xlsx).
+#
+# - Pesos, CP (Tabla 11), RP (Tabla 12) y funciones locales idénticos al ejercicio 3.
+# - Las tasas por encima de RP6 se truncan a RP6 (la función de prioridad no está definida más
+#   allá). Valores truncados:
+#   Orden Público - Araba/Álava: 6.861 -> 5.88
+#   Orden Público - Alicante/Alacant: 8.327 -> 5.88
+#   Orden Público - Almería: 8.608 -> 5.88
+#   Orden Público - Illes Balears: 7.634 -> 5.88
+#   Orden Público - Cádiz: 8.085 -> 5.88
+#   Orden Público - Castellón/Castelló: 6.772 -> 5.88
+#   Orden Público - Girona: 6.524 -> 5.88
+#   Orden Público - Gipuzkoa: 7.170 -> 5.88
+#   Orden Público - Madrid: 8.318 -> 5.88
+#   Orden Público - Málaga: 7.856 -> 5.88
+#   Orden Público - Murcia: 6.602 -> 5.88
+#   Orden Público - Navarra: 8.024 -> 5.88
+#   Orden Público - Soria: 7.599 -> 5.88
+#   Orden Público - Tarragona: 6.253 -> 5.88
+#   Orden Público - Toledo: 5.903 -> 5.88
+#   Orden Público - Valencia/València: 7.480 -> 5.88
+#   Orden Público - Zaragoza: 8.420 -> 5.88
+#   Drogas - Girona: 6.833 -> 6.81
+#   Drogas - Granada: 12.664 -> 6.81
+#   Drogas - Málaga: 7.131 -> 6.81
+
+method = "sortII"
+alternatives = ["Araba/Álava", "Albacete", "Alicante/Alacant", "Almería", "Ávila", "Badajoz", "Illes Balears", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Castellón/Castelló", "Ciudad Real", "Córdoba", "A Coruña", "Cuenca", "Girona", "Granada", "Guadalajara", "Gipuzkoa", "Huelva", "Huesca", "Jaén", "León", "Lleida", "La Rioja", "Lugo", "Madrid", "Málaga", "Murcia", "Navarra", "Ourense", "Asturias", "Palencia", "Las Palmas", "Pontevedra", "Salamanca", "Santa Cruz de Tenerife", "Cantabria", "Segovia", "Sevilla", "Soria", "Tarragona", "Teruel", "Toledo", "Valencia/València", "Valladolid", "Bizkaia", "Zamora", "Zaragoza"]
+
+[[criteria]]
+name = "Crímenes"
+unit = "delitos/10.000 hab."
+values = [0.2079, 0.3099, 0.3948, 0.4908, 0.3156, 0.2255, 0.4176, 0.3703, 0.112, 0.1549, 0.5038, 0.3808, 0.2851, 0.3101, 0.2492, 0.3044, 0.3336, 0.4193, 0.2549, 0.3571, 0.2072, 0.3083, 0.3063, 0.3129, 0.3581, 0.4651, 0.3704, 0.3003, 0.4053, 0.5153, 0.5657, 0.0985, 0.2089, 0.2536, 0.3333, 0.2859, 0.1528, 0.3673, 0.1699, 0.0644, 0.5058, 0.447, 0.6135, 0.0739, 0.2883, 0.3765, 0.3454, 0.1473, 0.1803, 0.399]
+range = 0.74
+profiles = [0.17, 0.25, 0.36]
+
+[[criteria]]
+name = "Robo"
+unit = "delitos/10.000 hab."
+values = [160.2977, 148.9253, 213.9454, 149.7108, 91.9151, 116.631, 261.714, 360.4668, 127.1908, 79.7039, 156.4845, 192.6974, 100.7886, 138.1013, 132.3185, 115.3501, 259.7168, 142.3809, 136.7454, 162.5214, 161.692, 113.3096, 98.8969, 119.4512, 176.7933, 138.919, 87.8514, 264.5616, 217.5383, 186.4979, 179.6364, 96.8971, 106.2984, 70.6172, 158.4378, 107.7898, 131.583, 168.4891, 133.9692, 98.288, 222.434, 98.5673, 231.6162, 66.7717, 137.2691, 255.3937, 115.3969, 219.6211, 91.8457, 141.1993]
+range = 406.46
+profiles = [129.18, 179.38, 268.99]
+
+[[criteria]]
+name = "Relacionado con Vehículo"
+unit = "delitos/10.000 hab."
+values = [2.4355, 14.0247, 26.4208, 19.2991, 6.7548, 11.7428, 41.9875, 50.0422, 11.5068, 5.317, 27.2363, 21.6077, 8.45, 20.4264, 16.9927, 14.0003, 37.5402, 17.8137, 25.6011, 3.6537, 29.4636, 7.7507, 9.6898, 12.3139, 19.1588, 10.1709, 8.1493, 42.3067, 31.7595, 27.1698, 11.6413, 12.8058, 8.4056, 4.1838, 18.7501, 13.4287, 17.3916, 21.492, 10.6557, 8.5664, 47.7465, 4.4702, 38.9232, 3.2535, 20.2472, 41.8704, 9.0391, 3.7512, 6.071, 11.6839]
+range = 53.98
+profiles = [7.42, 13.69, 30.94]
+
+[[criteria]]
+name = "Orden Público"
+unit = "delitos/10.000 hab."
+values = [5.88, 5.2173, 5.88, 5.88, 3.3458, 4.4355, 5.88, 5.0073, 5.7394, 3.3038, 5.88, 5.88, 5.2736, 4.031, 3.6852, 4.1088, 5.88, 5.4291, 3.9694, 5.88, 5.369, 4.668, 4.4015, 3.8886, 4.6106, 4.6203, 2.9016, 5.88, 5.88, 5.88, 5.88, 3.9402, 5.0831, 5.5784, 5.1918, 3.8126, 3.3622, 4.775, 4.7755, 5.7324, 5.3341, 5.88, 5.88, 2.8099, 5.88, 5.88, 3.4544, 5.6484, 3.6666, 5.88]
+range = 5.88
+profiles = [2.73, 3.38, 4.52]
+
+[[criteria]]
+name = "Drogas"
+unit = "delitos/10.000 hab."
+values = [3.8018, 2.4795, 5.6656, 6.1943, 2.462, 3.4281, 6.4815, 5.5396, 2.2958, 2.2455, 6.3093, 2.8314, 2.4841, 1.9638, 1.3975, 2.4856, 6.81, 6.81, 2.2578, 3.4889, 3.3156, 4.4038, 2.5958, 1.3409, 3.0215, 2.8838, 1.9138, 4.9403, 6.81, 3.736, 2.3521, 1.1164, 1.89, 3.4865, 3.5431, 2.4888, 2.0479, 3.3905, 1.9374, 2.8984, 3.1576, 3.2409, 5.4745, 1.9226, 3.6514, 4.8564, 1.1323, 1.8626, 3.3661, 4.3584]
+range = 6.81
+profiles = [1.46, 2.0, 2.77]
+
+[categories]
+profile_type = "central"
+names = ["Alto", "Medio", "Bajo"]
+
+[evaluations]
+# Crímenes-Robo, Crímenes-Vehículo, Crímenes-Orden, Crímenes-Drogas, Robo-Vehículo,
+# Robo-Orden, Robo-Drogas, Vehículo-Orden, Vehículo-Drogas, Orden-Drogas
+criteria = [5, 3, 7, 3, 3, -2, -4, -5, -5, -5]
+
+[evaluations.ranges]
+# Puntos de cada criterio por valor descendente (orden del cuestionario).
+# Menos delitos = mayor prioridad, así que casi siempre gana el punto de la derecha (x < 0).
+# RP6, RP5, RP4, CP3, RP3, CP2, CP1, RP2, RP1
+"Crímenes" = [1, 1, -3, -5, -4, -8, -7, -9, 1, -3, -3, -3, -5, -5, -9, -2, -2, -2, -4, -4, -9, 1, -2, -2, -2, -9, 1, 1, -2, -4, 1, 1, -3, 1, -3, -3]
+# RP6, RP5, CP3, RP4, CP2, RP3, CP1, RP2, RP1
+"Robo" = [1, -2, -2, -5, -4, -8, -6, -9, 1, -2, -2, -2, -3, -4, -9, 1, -2, 1, -2, -3, -9, 1, -2, -2, -3, -9, 1, 1, -3, -7, 1, -2, -4, 1, -3, -2]
+# RP6, RP5, RP4, CP3, RP3, CP2, RP2, CP1, RP1
+"Relacionado con Vehículo" = [1, -2, -2, -5, -4, -7, -9, -9, 1, -2, -3, -3, -3, -7, -9, 1, 1, -2, -3, -5, -9, 1, -3, -2, -5, -9, -2, -2, -3, -9, 1, -2, -7, -2, -4, -2]
+# RP6, RP5, CP3, RP4, CP2, CP1, RP3, RP2, RP1
+"Orden Público" = [1, 1, -3, -4, -4, -5, -8, -9, -2, 1, -2, -2, -2, -5, -9, -2, 1, -2, -2, -4, -9, 1, 1, 1, -2, -8, 1, 1, -3, -5, 1, -2, -5, -2, -4, -2]
+# RP6, RP5, RP4, CP3, RP3, CP2, CP1, RP2, RP1
+"Drogas" = [1, -2, -4, -4, -8, -9, -7, -9, 1, -3, -3, -5, -5, -5, -9, -2, -2, -2, -2, -3, -9, 1, 1, -2, -2, -9, 1, -2, -2, -9, 1, 1, -7, 1, -4, -3]

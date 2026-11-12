@@ -1,0 +1,69 @@
+# Ejercicio 2 - AHPSort II: criminalidad andaluza 2017 normalizada (hechos por 10.000 hab.).
+#
+# - Delitos: Tabla 1 (data/Andalucía.xls); habitantes: data/habitantes.xlsx.
+#   values = delitos / habitantes * 10.000.
+# - `profiles`: Tabla 8 (CPs recalculados). `range`: RP6 de la Tabla 9 (RP1..RP6 equidistantes).
+# - Pesos de los criterios reutilizados del ejercicio 1.
+# - Las funciones de prioridad local se recalculan: los RP heredan las ordenadas de la Tabla 13 y
+#   los nuevos CP se interpolan linealmente sobre esa función (ver scripts/generar.py).
+
+method = "sortII"
+alternatives = ["Almería", "Cádiz", "Córdoba", "Granada", "Huelva", "Jaén", "Málaga", "Sevilla"]
+
+[[criteria]]
+name = "Crímenes"
+unit = "delitos/10.000 hab."
+values = [0.3143, 0.4896, 0.2575, 0.3473, 0.1521, 0.2711, 0.3421, 0.4415]
+range = 0.49
+profiles = [0.26, 0.34, 0.41]
+
+[[criteria]]
+name = "Robo"
+unit = "delitos/10.000 hab."
+values = [236.1873, 213.2572, 186.7689, 207.7305, 213.413, 120.3463, 272.0902, 271.3194]
+range = 282.94
+profiles = [194.29, 215.32, 261.32]
+
+[[criteria]]
+name = "Relacionado con Vehículo"
+unit = "delitos/10.000 hab."
+values = [28.7103, 31.6623, 21.7691, 24.9528, 26.7955, 11.4479, 37.608, 49.6034]
+range = 49.82
+profiles = [22.95, 28.44, 36.2]
+
+[[criteria]]
+name = "Orden Público"
+unit = "delitos/10.000 hab."
+values = [5.2884, 5.7947, 2.8193, 3.9942, 2.9667, 2.7902, 4.8949, 3.6758]
+range = 5.83
+profiles = [2.87, 3.86, 5.32]
+
+[[criteria]]
+name = "Drogas"
+unit = "delitos/10.000 hab."
+values = [3.6486, 6.5652, 1.9053, 6.7511, 2.6434, 2.0568, 5.5082, 2.1306]
+range = 6.81
+profiles = [2.06, 3.23, 6.25]
+
+[categories]
+profile_type = "central"
+names = ["Alto", "Medio", "Bajo"]
+
+[evaluations]
+# Crímenes-Robo, Crímenes-Vehículo, Crímenes-Orden, Crímenes-Drogas, Robo-Vehículo,
+# Robo-Orden, Robo-Drogas, Vehículo-Orden, Vehículo-Drogas, Orden-Drogas
+criteria = [5, 3, 7, 3, 3, -2, -4, -5, -5, -5]
+
+[evaluations.ranges]
+# Puntos de cada criterio por valor descendente (orden del cuestionario).
+# Menos delitos = mayor prioridad, así que casi siempre gana el punto de la derecha (x < 0).
+# RP6, CP3, RP5, CP2, RP4, CP1, RP3, RP2, RP1
+"Crímenes" = [1, 1, 1, -2, -2, -7, -9, -9, 1, 1, 1, -2, -4, -5, -9, 1, 1, -3, -3, -4, -9, 1, -2, -3, -3, -9, -2, -2, -4, -9, -2, -3, -9, -2, -8, -3]
+# RP6, CP3, RP5, CP2, CP1, RP4, RP3, RP2, RP1
+"Robo" = [1, 1, 1, -2, -4, -5, -9, -9, 1, 1, -2, -2, -4, -5, -9, 1, 1, -2, -2, -4, -9, 1, 1, -2, -4, -9, 1, -2, -3, -9, -2, -3, -9, -2, -8, -2]
+# RP6, RP5, CP3, RP4, CP2, CP1, RP3, RP2, RP1
+"Relacionado con Vehículo" = [1, -2, 1, -2, -3, -4, -9, -9, 1, 1, 1, -2, -3, -4, -9, 1, 1, -2, -2, -3, -9, 1, 1, 1, -2, -9, 1, 1, -2, -9, 1, -2, -9, -2, -9, -7]
+# RP6, CP3, RP5, CP2, RP4, CP1, RP3, RP2, RP1
+"Orden Público" = [1, 1, -2, -3, -4, -4, -6, -9, 1, -2, -2, -2, -3, -5, -9, 1, -2, -2, -2, -5, -9, 1, 1, 1, -3, -9, 1, 1, -3, -6, 1, -2, -5, -2, -4, -2]
+# RP6, CP3, RP5, RP4, CP2, RP3, CP1, RP2, RP1
+"Drogas" = [1, 1, -2, -2, -4, -7, -9, -9, 1, 1, -2, -3, -6, -8, -9, 1, -2, -3, -5, -5, -9, -2, -2, -2, -2, -9, 1, 1, -2, -9, 1, -2, -9, 1, -9, -5]

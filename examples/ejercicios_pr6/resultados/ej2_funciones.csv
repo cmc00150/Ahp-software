@@ -1,0 +1,46 @@
+criterio,punto,valor,prioridad
+Crímenes,RP1,0.0,0.451
+Crímenes,RP2,0.098,0.178
+Crímenes,RP3,0.196,0.115
+Crímenes,Alto,0.26,0.069
+Crímenes,RP4,0.294,0.043
+Crímenes,Medio,0.34,0.040
+Crímenes,RP5,0.392,0.037
+Crímenes,Bajo,0.41,0.036
+Crímenes,RP6,0.49,0.031
+Robo,RP1,0.0,0.438
+Robo,RP2,56.588,0.190
+Robo,RP3,113.176,0.103
+Robo,RP4,169.764,0.065
+Robo,Alto,194.29,0.054
+Robo,Medio,215.32,0.045
+Robo,RP5,226.352,0.041
+Robo,Bajo,261.32,0.035
+Robo,RP6,282.94,0.031
+Relacionado con Vehículo,RP1,0.0,0.502
+Relacionado con Vehículo,RP2,9.964,0.135
+Relacionado con Vehículo,RP3,19.928,0.075
+Relacionado con Vehículo,Alto,22.95,0.067
+Relacionado con Vehículo,Medio,28.44,0.055
+Relacionado con Vehículo,RP4,29.892,0.052
+Relacionado con Vehículo,Bajo,36.2,0.045
+Relacionado con Vehículo,RP5,39.856,0.039
+Relacionado con Vehículo,RP6,49.82,0.030
+Orden Público,RP1,0.0,0.389
+Orden Público,RP2,1.166,0.189
+Orden Público,RP3,2.332,0.090
+Orden Público,Alto,2.87,0.084
+Orden Público,RP4,3.498,0.075
+Orden Público,Medio,3.86,0.065
+Orden Público,RP5,4.664,0.041
+Orden Público,Bajo,5.32,0.036
+Orden Público,RP6,5.83,0.031
+Drogas,RP1,0.0,0.482
+Drogas,RP2,1.362,0.139
+Drogas,Alto,2.06,0.108
+Drogas,RP3,2.724,0.078
+Drogas,Medio,3.23,0.066
+Drogas,RP4,4.086,0.042
+Drogas,RP5,5.448,0.030
+Drogas,Bajo,6.25,0.029
+Drogas,RP6,6.81,0.025
